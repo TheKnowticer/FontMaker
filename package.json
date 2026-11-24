@@ -1,0 +1,24 @@
+{
+  "name": "glyphwright-desktop",
+  "version": "1.0.0",
+  "description": "A local desktop font editor",
+  "main": "desktop/main.js",
+  "author": "Glyphwright contributors",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "45.4.1",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "dev.glyphwright.desktop",
+    "productName": "Glyphwright",
+    "directories": {"output": "release"},
+    "files": ["index.html", "opentype.min.js", "assets/**/*", "desktop/**/*"],
+    "win": {"target": "nsis", "signAndEditExecutable": false},
+    "nsis": {"oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "shortcutName": "Glyphwright"}
+  }
+}

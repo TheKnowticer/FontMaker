@@ -1,0 +1,1685 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Glyphwright</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="assets/fonts.css">
+<script src="opentype.min.js"></script>
+<style>
+/* Layout: a type-design workbench. Glyph set on the left, drawing board in the middle, inspector on the right, proof and kerning underneath. */
+:root{
+  --paper:#eef1f4; --panel:#f8f9fb; --ink:#14171c; --muted:#5b6472; --rule:#d5dbe3; --grid:#e3e8ee; --guide:#1f6fe5;
+  --accent:#2b3fd6; --accent-soft:#dfe3fb; --handle:#d9661a; --glyph:#1b2029; --metric:#8a96a8; --danger:#b4232a;
+  --display:"Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#111318; --panel:#191c22; --ink:#e7e9ee; --muted:#9aa3b2; --rule:#2b303a; --grid:#20242c; --guide:#5aa2ff;
+  --accent:#8191ff; --accent-soft:#262c52; --handle:#f39b52; --glyph:#e3e6ec; --metric:#5f6a7c; --danger:#ff6b70; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#111318; --panel:#191c22; --ink:#e7e9ee; --muted:#9aa3b2; --rule:#2b303a; --grid:#20242c; --guide:#5aa2ff;
+  --accent:#8191ff; --accent-soft:#262c52; --handle:#f39b52; --glyph:#e3e6ec; --metric:#5f6a7c; --danger:#ff6b70; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:14px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;box-sizing:border-box}
+*{box-sizing:border-box}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;gap:12px;grid-template-rows:auto 1fr auto auto;min-height:100%;max-width:1500px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px}
+.brand{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:-.01em;display:flex;align-items:baseline;gap:10px}
+.brand small{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.family{display:flex;align-items:center;gap:8px;flex:1;min-width:200px}
+.family input{background:transparent;border:0;border-bottom:1px solid var(--rule);padding:4px 2px;font-family:var(--display);font-size:18px;font-weight:500;width:100%;max-width:320px}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--rule);background:var(--panel);padding:7px 12px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--paper);font-weight:600}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.danger{color:var(--danger)}
+.work{display:grid;grid-template-columns:250px minmax(0,1fr) 270px;gap:12px;min-height:560px}
+.pane{background:var(--panel);border:1px solid var(--rule);border-radius:8px;min-width:0;display:flex;flex-direction:column}
+.pane h2{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;padding:10px 12px;border-bottom:1px solid var(--rule);display:flex;justify-content:space-between;gap:8px}
+.glyphs{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;padding:10px;overflow:auto;align-content:start;flex:1;max-height:640px}
+.cell{border:1px solid var(--rule);border-radius:5px;background:var(--paper);padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:stretch;overflow:hidden}
+[hidden]{display:none!important}
+.glyphs{grid-auto-rows:max-content}
+.cell svg{width:100%;height:44px;display:block;flex:none}
+.cell .lab{font-family:var(--mono);font-size:10px;color:var(--muted);border-top:1px solid var(--rule);padding:2px 0;text-align:center}
+.cell.empty svg text{fill:var(--rule)}
+.cell[aria-current="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.cell[aria-current="true"] .lab{background:var(--accent);color:var(--paper)}
+.toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--rule)}
+.tool{border:1px solid var(--rule);background:var(--paper);border-radius:6px;padding:5px 10px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.tool kbd{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.tool[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.tool[aria-pressed="true"] kbd{color:var(--accent)}
+.tool:disabled{opacity:.45;cursor:not-allowed}
+.sep{width:1px;height:22px;background:var(--rule);margin:0 4px}
+.hintbar{font-size:12px;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--rule)}
+#canvas{flex:1;width:100%;min-height:440px;display:block;touch-action:none;cursor:default;background:var(--panel)}
+#canvas.pen{cursor:crosshair}
+#canvas.moveimg{cursor:move}
+#canvas.dropping{outline:2px dashed var(--accent);outline-offset:-6px}
+#canvas .fill{fill:var(--glyph);fill-opacity:.12;stroke:var(--glyph);stroke-width:1.2}
+#canvas .hit{fill:none;stroke:transparent;stroke-width:14;cursor:move}
+#canvas .hit.sel{stroke:var(--accent);stroke-opacity:.22}
+#canvas .mline{stroke:var(--metric);stroke-width:1}
+#canvas .mline.base{stroke:var(--muted)}
+#canvas .grid{stroke:var(--grid);stroke-width:1}
+#canvas .adv{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:6 4}
+#canvas .advhit{stroke:transparent;stroke-width:14;cursor:ew-resize}
+#canvas .mlabel{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+#canvas .hline{stroke:var(--handle);stroke-width:1}
+#canvas .handle{fill:var(--panel);stroke:var(--handle);stroke-width:1.5;cursor:pointer}
+#canvas .handle.sel{fill:var(--handle)}
+#canvas .node{fill:var(--panel);stroke:var(--accent);stroke-width:1.5;cursor:pointer}
+#canvas .node.start{stroke-width:3}
+#canvas .node.sel{fill:var(--accent)}
+#canvas .marquee{fill:var(--accent);fill-opacity:.08;stroke:var(--accent);stroke-width:1;stroke-dasharray:4 3}
+#canvas .trace{pointer-events:none}
+#canvas .guide{stroke:var(--guide);stroke-width:1.5;stroke-dasharray:2 4;stroke-linecap:round}
+#canvas .guide.on{stroke-width:2.5}
+#canvas .guidehit{stroke:transparent;stroke-width:16}
+#canvas .guidehit.h{cursor:ns-resize}
+#canvas .guidehit.v{cursor:ew-resize}
+#canvas.pen .guidehit{pointer-events:none}
+.tbl{font-size:12px;color:var(--muted)}
+.gtool{color:var(--guide);border-color:var(--guide)}
+#canvas .glabel{font-family:var(--mono);font-size:11px;fill:var(--guide)}
+.guidelist{display:grid;gap:6px}
+.guidelist .grow{display:flex;gap:6px;align-items:center}
+.guidelist .grow span{font-size:12px;color:var(--muted);width:6.5em}
+.guidelist .grow input{width:80px;font-family:var(--mono);border:1px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:5px;padding:4px 6px}
+.guidelist .grow .btn{padding:3px 9px}
+.inspector{overflow:auto;max-height:760px}
+.sec{padding:12px;border-bottom:1px solid var(--rule);display:grid;gap:10px}
+.sec:last-child{border-bottom:0}
+.sec h3{margin:0;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.big{display:flex;gap:12px;align-items:center}
+.big .ch{font-family:var(--display);font-size:44px;line-height:1;width:56px;height:56px;display:grid;place-items:center;border:1px solid var(--rule);border-radius:6px;background:var(--paper)}
+.big .meta{font-family:var(--mono);font-size:12px;color:var(--muted);display:grid;gap:2px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.f{display:grid;gap:3px;min-width:0}
+.f label,.f span{font-size:11px;color:var(--muted)}
+.f input[type=number],.f input[type=text],.f input:not([type]){font-family:var(--mono);font-variant-numeric:tabular-nums;border:1px solid var(--rule);background:var(--paper);border-radius:5px;padding:5px 7px;width:100%;min-width:0}
+.f input[type=range]{width:100%;accent-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row .btn{padding:5px 10px;font-size:13px}
+.inline{display:flex;gap:6px;align-items:center}
+.inline input{width:56px;text-align:center;font-family:var(--display);font-size:18px;border:1px solid var(--rule);background:var(--paper);border-radius:5px;padding:2px 4px}
+.inline input.angle{width:64px;font-family:var(--mono);font-size:14px;padding:5px 6px}
+.addchar{display:flex;gap:6px;padding:8px 10px;border-bottom:1px solid var(--rule)}
+.addchar input{width:52px;text-align:center;font-family:var(--display);font-size:18px;border:1px solid var(--rule);background:var(--paper);border-radius:5px;padding:2px 4px}
+#artFit{font:inherit;border:1px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:5px;padding:5px 7px}
+#artCode{width:100%;font-family:var(--mono);font-size:11px;background:var(--paper);color:var(--ink);border:1px solid var(--rule);border-radius:5px;padding:6px}
+.picker{flex-basis:100%;display:grid;gap:8px;padding:12px;border:1px solid var(--rule);border-radius:8px;background:var(--panel)}
+.picker-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.picker-head input{flex:1;min-width:160px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:6px;padding:6px 10px}
+.picker-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;max-height:320px;overflow:auto;align-content:start}
+.pick{text-align:left;border:1px solid var(--rule);background:var(--paper);border-radius:6px;padding:8px 10px;cursor:pointer;display:grid;gap:2px;min-width:0}
+.pick:hover{border-color:var(--accent)}
+.pick .pn{font-size:20px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick .ps{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.credits{text-align:center;font-size:12px;color:var(--muted);padding:4px 0 8px;letter-spacing:.02em}
+.check{display:flex;gap:8px;align-items:center;font-size:13px}
+.note{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.selinfo{font-size:13px;margin:0}
+/* bottom pane */
+.tabs{display:flex;align-items:stretch;gap:2px;border-bottom:1px solid var(--rule);padding:0 8px}
+.tab{background:none;border:0;border-bottom:2px solid transparent;padding:10px 10px 8px;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs .status{margin-left:auto;align-self:center;padding-right:4px}
+.proof{display:grid;gap:10px;padding:12px}
+.proof-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.proof-controls input[type=text]{flex:1;min-width:200px;border:1px solid var(--rule);background:var(--paper);border-radius:6px;padding:7px 10px}
+.size{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.inpreview{font-family:var(--preview, monospace);font-kerning:normal;font-feature-settings:"kern" 1}
+#proofText{line-height:1.2;word-break:break-word;min-height:1.2em;margin:0}
+#alphabet{font-size:28px;color:var(--muted);margin:0;word-break:break-all}
+.kern{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;padding:12px}
+.kern-side{display:grid;gap:10px;align-content:start}
+.kern-side h3{margin:4px 0 0;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.pair{display:grid;grid-template-columns:64px 64px 1fr;gap:8px}
+.pair input.char{font-family:var(--display);font-size:22px;text-align:center;padding:2px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{border:1px solid var(--rule);background:var(--paper);border-radius:999px;padding:3px 9px;cursor:pointer;font-size:13px;display:inline-flex;gap:6px;align-items:baseline}
+.chip b{font-family:var(--display);font-weight:500;font-size:15px}
+.chip span{font-family:var(--mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chip.set{border-color:var(--accent)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent)}
+.kern-view{display:grid;gap:8px;min-width:0;align-content:start}
+#kSvg{width:100%;height:260px;display:block;background:var(--paper);border:1px solid var(--rule);border-radius:6px;cursor:ew-resize;touch-action:none}
+#kSvg .kl{fill:var(--glyph)}
+#kSvg .kr{fill:var(--accent)}
+#kSvg .kline{stroke:var(--metric);stroke-width:1}
+#kSvg .kmark{stroke:var(--handle);stroke-width:1.5}
+#kSvg .ktext{font-family:var(--mono);fill:var(--muted)}
+#kCtx{font-size:52px;margin:0;line-height:1.15;word-break:break-word}
+.status{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.status.err{color:var(--danger)}
+.filestatus{flex-basis:100%;margin:0;font-size:13px;padding:8px 12px;border-radius:6px;background:var(--accent-soft);color:var(--ink)}
+.filestatus.err{background:transparent;border:1px solid var(--danger);color:var(--danger)}
+.fallback{flex-basis:100%;display:grid;gap:8px;padding:12px;border:1px solid var(--rule);border-radius:8px;background:var(--panel)}
+.fallback textarea{width:100%;font-family:var(--mono);font-size:11px;background:var(--paper);color:var(--ink);border:1px solid var(--rule);border-radius:5px;padding:6px}
+.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:6px;font-size:13px;z-index:10;max-width:calc(100% - 32px)}
+@media (max-width:1100px){ .kern{grid-template-columns:1fr} }
+@media (max-width:980px){
+  .work{grid-template-columns:1fr}
+  .glyphs{max-height:200px}
+  #canvas{min-height:380px}
+  .inspector{max-height:none}
+}
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand">Glyphwright <small>font editor</small></div>
+    <div class="family"><label for="family" class="status">Family</label><input id="family" value="Untitled Sans" spellcheck="false"></div>
+    <div class="actions">
+      <button class="btn" id="newFont" title="Start a blank font. Save your project first if you want to keep this one.">New font</button>
+      <button class="btn" id="openBtn" title="Open a font (.ttf, .otf, .ttc, .woff) or a saved project">Open font or project</button>
+      <input type="file" id="openFile" accept=".ttf,.otf,.ttc,.woff,.json,font/ttf,font/otf,font/collection,font/woff,application/json" hidden>
+      <button class="btn" id="installedBtn" title="Pick from the fonts installed on this computer">Installed fonts</button>
+      <button class="btn" id="saveProj">Save project</button>
+      <button class="btn primary" id="exportFont">Export font</button>
+    </div>
+    <p class="filestatus" id="fileStatus" role="status" hidden></p>
+    <div class="fallback" id="fallback" hidden>
+      <p class="note">This view can't save files, so here is your project as text. Copy it and paste it into a plain text file named <b>something.json</b>, then use “Open font or project” to load it later.</p>
+      <textarea id="fallbackText" readonly rows="5" aria-label="Project data"></textarea>
+      <div class="row"><button class="btn" id="fallbackCopy">Copy project text</button><button class="btn" id="fallbackClose">Close</button></div>
+    </div>
+    <div class="picker" id="picker" hidden>
+      <div class="picker-head">
+        <b id="pickerTitle">Installed fonts</b>
+        <input id="pickerSearch" type="search" placeholder="Search by name" aria-label="Search fonts" autocomplete="off">
+        <button class="btn" id="pickerClose">Close</button>
+      </div>
+      <div class="picker-list" id="pickerList" role="list"></div>
+      <p class="note" id="pickerNote"></p>
+    </div>
+  </header>
+
+  <div class="work">
+    <section class="pane" aria-label="Glyph set">
+      <h2><span>Glyph set</span><span id="drawnCount"></span></h2>
+      <div class="addchar">
+        <input id="newChar" maxlength="2" placeholder="©" aria-label="Character to add" spellcheck="false" autocomplete="off">
+        <button class="btn" id="addCharBtn">Add character</button>
+      </div>
+      <div class="glyphs" id="glyphGrid"></div>
+    </section>
+
+    <section class="pane" aria-label="Drawing board">
+      <div class="toolbar">
+        <button class="tool" id="toolSelect" aria-pressed="true">Select <kbd>V</kbd></button>
+        <button class="tool" id="toolPen" aria-pressed="false">Pen <kbd>P</kbd></button>
+        <span class="sep"></span>
+        <button class="tool" id="undoBtn">Undo <kbd>⌘Z</kbd></button>
+        <span class="sep"></span>
+        <button class="tool" id="copyBtn" title="Copies the selected points, or the whole letter if nothing is selected">Copy <kbd>⌘C</kbd></button>
+        <button class="tool" id="pasteBtn" disabled>Paste <kbd>⌘V</kbd></button>
+        <span class="sep"></span>
+        <label class="check"><input type="checkbox" id="snap" checked> Snap to 10</label>
+        <span class="sep"></span>
+        <span class="tbl">Guides</span>
+        <button class="tool gtool" id="tbGuideH" title="Add a blue guide across the board">+ Across</button>
+        <button class="tool gtool" id="tbGuideV" title="Add a blue guide up and down the board">+ Up/down</button>
+      </div>
+      <div class="hintbar" id="hint"></div>
+      <svg id="canvas" role="img" aria-label="Glyph outline editor"></svg>
+    </section>
+
+    <aside class="pane inspector" aria-label="Inspector">
+      <div class="sec">
+        <div class="big"><div class="ch" id="insChar">A</div>
+          <div class="meta"><span id="insName">A</span><span id="insCode">U+0041</span><span id="insCounts"></span></div></div>
+        <div class="fields">
+          <div class="f"><label for="adv">Advance width</label><input id="adv" type="number" step="1"></div>
+          <div class="f"><label for="lsb">Left bearing</label><input id="lsb" type="number" step="1"></div>
+          <div class="f"><label for="rsb">Right bearing</label><input id="rsb" type="number" step="1"></div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h3>Selection</h3>
+        <p class="note" id="selNone">Nothing selected. Click a point, drag a box around points, or click an outline. Shift-click adds to the selection.</p>
+        <p class="selinfo" id="selInfo" hidden></p>
+        <div class="fields" id="selFields" hidden>
+          <div class="f"><label for="selX">X</label><input id="selX" type="number" step="1"></div>
+          <div class="f"><label for="selY">Y</label><input id="selY" type="number" step="1"></div>
+        </div>
+        <div class="row" id="selActions" hidden>
+          <button class="btn" id="toggleCurve">Curve / sharp</button>
+          <button class="btn" id="reverseBtn">Reverse contour</button>
+          <button class="btn danger" id="deleteBtn">Delete</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h3>Scale</h3>
+        <div class="fields">
+          <div class="f"><label for="scaleW">Width %</label><input id="scaleW" type="number" value="100" min="1" max="1000" step="1"></div>
+          <div class="f"><label for="scaleH">Height %</label><input id="scaleH" type="number" value="100" min="1" max="1000" step="1"></div>
+        </div>
+        <div class="chips" id="scalePresets" aria-label="Preset sizes"></div>
+        <label class="check"><input type="checkbox" id="scaleLock" checked> Keep proportions</label>
+        <div class="row"><button class="btn" id="scaleOne">Scale this letter</button><button class="btn" id="scaleAll">Scale all letters</button></div>
+        <p class="note">Letters scale from the baseline so they stay on the line. Scaling all letters also scales spacing, kerning and the height lines. Undo reverses it.</p>
+      </div>
+
+      <div class="sec">
+        <h3>Rotate</h3>
+        <div id="rotBtns" style="display:grid;gap:6px">
+          <div class="row"><span class="note" style="width:7.5em">Left (counter&shy;clockwise)</span>
+            <button class="btn" data-deg="30" title="Rotate 30° counterclockwise">30°</button>
+            <button class="btn" data-deg="45" title="Rotate 45° counterclockwise">45°</button>
+            <button class="btn" data-deg="90" title="Rotate 90° counterclockwise">90°</button></div>
+          <div class="row"><span class="note" style="width:7.5em">Right (clockwise)</span>
+            <button class="btn" data-deg="-30" title="Rotate 30° clockwise">30°</button>
+            <button class="btn" data-deg="-45" title="Rotate 45° clockwise">45°</button>
+            <button class="btn" data-deg="-90" title="Rotate 90° clockwise">90°</button></div>
+        </div>
+        <div class="inline">
+          <label class="note" for="rotAngle">Other angle</label>
+          <input id="rotAngle" type="number" value="15" min="-360" max="360" step="1" class="angle">
+          <button class="btn" id="rotGo">Rotate</button>
+        </div>
+        <p class="note" id="rotNote">Turns the whole letter around its center. Select points first to turn just those. A positive angle turns counterclockwise.</p>
+      </div>
+
+      <div class="sec">
+        <h3>Guides</h3>
+        <div class="row"><button class="btn" id="addGuideH">Add across</button><button class="btn" id="addGuideV">Add up and down</button></div>
+        <div class="guidelist" id="guideList"></div>
+        <label class="check"><input type="checkbox" id="guideSnap" checked> Points snap to guides</label>
+        <label class="check"><input type="checkbox" id="guideShow" checked> Show guides</label>
+        <p class="note">Blue dotted lines for lining things up. They show on every letter and save with the project. Drag a guide to move it, type an exact position, or drag it off the board to remove it.</p>
+      </div>
+
+      <div class="sec">
+        <h3>Weight and width</h3>
+        <div class="f"><label for="wtAmt">Weight <span id="wtOut"></span></label><input type="range" id="wtAmt" min="-40" max="100" step="2" value="0"></div>
+        <div class="f"><label for="cnPct">Width <span id="cnOut"></span></label><input type="range" id="cnPct" min="50" max="150" step="1" value="100"></div>
+        <label class="check"><input type="checkbox" id="cnKeep" checked> Keep stem thickness when changing width</label>
+        <div class="row"><button class="btn" id="fxAll">Apply to all letters</button><button class="btn" id="fxBack">Back to original</button></div>
+        <p class="note">Drag a slider to change this letter. Its top and bottom stay on the height lines. Apply to all letters does the whole font. Undo reverses either.</p>
+      </div>
+
+      <div class="sec">
+        <h3>Shapes and letters</h3>
+        <div class="row">
+          <button class="btn" id="addRect">Rectangle</button>
+          <button class="btn" id="addEllipse">Ellipse</button>
+          <button class="btn" id="addCounter">Counter (hole)</button>
+        </div>
+        <div class="inline">
+          <label class="note" for="copyFrom">Copy outlines from</label>
+          <input id="copyFrom" maxlength="2" value="O" spellcheck="false" autocomplete="off">
+          <button class="btn" id="copyFromBtn">Add</button>
+        </div>
+        <div class="row">
+          <button class="btn" id="flipH">Flip ↔</button>
+          <button class="btn" id="flipV">Flip ↕</button>
+          <span class="note" id="flipNote">Flips the whole letter</span>
+        </div>
+        <div class="row"><button class="btn danger" id="clearGlyph">Clear letter</button></div>
+      </div>
+
+      <div class="sec">
+        <h3>Italic</h3>
+        <div class="inline">
+          <label class="note" for="slantAngle">Slant</label>
+          <input id="slantAngle" type="number" value="12" min="-45" max="45" step="1" class="angle">
+          <span class="note">degrees</span>
+        </div>
+        <div class="row"><button class="btn" id="slantOne">Slant this letter</button><button class="btn" id="slantAll">Slant all letters</button></div>
+        <label class="check"><input type="checkbox" id="italicStyle"> Export as an Italic style</label>
+        <p class="note">Leans letters to the right. A negative angle leans them back. Undo reverses a slant.</p>
+      </div>
+
+      <div class="sec">
+        <h3>Import artwork</h3>
+        <p class="note">Copy a logo or design in Illustrator or Inkscape and press ⌘V here, or drop an .svg file on the drawing board. Filled shapes become editable outlines.</p>
+        <div class="f"><label for="artFit">Size</label>
+          <select id="artFit">
+            <option value="cap">Fit to cap height</option>
+            <option value="xh">Fit to x-height</option>
+            <option value="full">Fit descender to ascender</option>
+            <option value="orig">Keep original size</option>
+          </select></div>
+        <div class="row">
+          <button class="btn" id="artFileBtn">Choose SVG file</button>
+          <input type="file" id="artFile" accept=".svg,image/svg+xml" hidden>
+          <button class="btn" id="artCodeBtn">Paste SVG code</button>
+        </div>
+        <div id="artCodeBox" hidden style="display:grid;gap:6px">
+          <textarea id="artCode" rows="5" placeholder="&lt;svg …&gt;…&lt;/svg&gt;" aria-label="SVG code"></textarea>
+          <div class="row"><button class="btn" id="artCodeGo">Import code</button></div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h3>Tracing image</h3>
+        <p class="note" id="trNone">Put a photo or scan of a letter behind this glyph, then trace over it with the Pen. You can also drop an image onto the drawing board.</p>
+        <div class="row">
+          <button class="btn" id="trLoad">Load image</button>
+          <input type="file" id="trFile" accept="image/*" hidden>
+          <button class="btn danger" id="trRemove" hidden>Remove image</button>
+        </div>
+        <div id="trCtl" hidden style="display:grid;gap:8px">
+          <div class="f"><label for="trOp">Opacity</label><input type="range" id="trOp" min="5" max="100"></div>
+          <div class="f"><label for="trSize">Size</label><input type="range" id="trSize" min="150" max="3000" step="10"></div>
+          <label class="check"><input type="checkbox" id="trMove"> Drag to move the image</label>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h3>Font metrics · 1000 UPM</h3>
+        <div class="fields">
+          <div class="f"><label for="mAsc">Ascender</label><input id="mAsc" type="number"></div>
+          <div class="f"><label for="mCap">Cap height</label><input id="mCap" type="number"></div>
+          <div class="f"><label for="mXh">x-height</label><input id="mXh" type="number"></div>
+          <div class="f"><label for="mDesc">Descender</label><input id="mDesc" type="number"></div>
+        </div>
+        <div class="row"><button class="btn danger" id="resetBtn">Start over with sample</button></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="pane" aria-label="Proof and kerning">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tabProof" aria-selected="true" aria-controls="panelProof">Proof</button>
+      <button class="tab" role="tab" id="tabKern" aria-selected="false" aria-controls="panelKern">Kerning <span id="kernCount"></span></button>
+      <span class="status" id="buildStatus">Building…</span>
+    </div>
+
+    <div class="proof" id="panelProof" role="tabpanel">
+      <div class="proof-controls">
+        <input type="text" id="proofInput" value="VAT LAVA TOTAL lion" aria-label="Proof text">
+        <label class="size" for="proofSize">Size <input type="range" id="proofSize" min="24" max="200" value="88"> <span id="sizeVal">88px</span></label>
+      </div>
+      <p id="proofText" class="inpreview"></p>
+      <p id="alphabet" class="inpreview"></p>
+      <p class="note">Set in the font you're drawing, with your kerning applied. Letters you haven't drawn yet show in a stand-in monospace face.</p>
+    </div>
+
+    <div class="kern" id="panelKern" role="tabpanel" hidden>
+      <div class="kern-side">
+        <div class="pair">
+          <div class="f"><label for="kL">Left</label><input id="kL" class="char" maxlength="2" value="A" spellcheck="false" autocomplete="off"></div>
+          <div class="f"><label for="kR">Right</label><input id="kR" class="char" maxlength="2" value="V" spellcheck="false" autocomplete="off"></div>
+          <div class="f"><label for="kV">Kerning (units)</label><input id="kV" type="number" step="5"></div>
+        </div>
+        <input type="range" id="kS" min="-300" max="150" step="1" aria-label="Kerning amount">
+        <div class="row"><button class="btn" id="kSwap">Swap letters</button><button class="btn danger" id="kDel">Remove pair</button></div>
+        <h3>Common pairs</h3>
+        <div class="chips" id="kSuggest"></div>
+        <h3>Your pairs</h3>
+        <div class="chips" id="kList"></div>
+      </div>
+      <div class="kern-view">
+        <svg id="kSvg" role="img" aria-label="Kerning pair preview"></svg>
+        <p class="note" id="kNote">Drag left or right on the pair to tighten or loosen it. Negative numbers pull the letters closer.</p>
+        <p id="kCtx" class="inpreview"></p>
+      </div>
+    </div>
+  </section>
+  <footer class="credits">AI collaboration by Claude and Jim Kingston · 2026</footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script>
+(function(){
+"use strict";
+const STORE_KEY = "glyphwright.project.v1";
+const BASE = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"," ",".",",","!","?","-","'"];
+let CHARS = BASE.slice();
+const $ = id=>document.getElementById(id);
+const svg = $("canvas"), kSvg = $("kSvg");
+const NS = "http://www.w3.org/2000/svg";
+const clone = o=>JSON.parse(JSON.stringify(o));
+
+// ---------- geometry helpers ----------
+const P = a=> a ? {x:a[0], y:a[1]} : null;
+const N = (x,y,hi,ho)=>({x,y,hi:P(hi),ho:P(ho)});
+const poly = pts => pts.map(p=>N(p[0],p[1]));
+const rect = (x,y,w,h) => poly([[x,y],[x,y+h],[x+w,y+h],[x+w,y]]);
+const K = 0.5523;
+function rp(p){return p?{x:Math.round(p.x),y:Math.round(p.y)}:null}
+function ellipse(cx,cy,rx,ry){
+  return [
+    N(cx,cy+ry,[cx-K*rx,cy+ry],[cx+K*rx,cy+ry]),
+    N(cx+rx,cy,[cx+rx,cy+K*ry],[cx+rx,cy-K*ry]),
+    N(cx,cy-ry,[cx+K*rx,cy-ry],[cx-K*rx,cy-ry]),
+    N(cx-rx,cy,[cx-rx,cy-K*ry],[cx-rx,cy+K*ry])
+  ].map(n=>({x:Math.round(n.x),y:Math.round(n.y),hi:rp(n.hi),ho:rp(n.ho)}));
+}
+function reverse(c){return c.slice().reverse().map(n=>({x:n.x,y:n.y,hi:n.ho?{...n.ho}:null,ho:n.hi?{...n.hi}:null}))}
+function moveNode(n,dx,dy){ n.x+=dx; n.y+=dy; if(n.hi){n.hi.x+=dx;n.hi.y+=dy} if(n.ho){n.ho.x+=dx;n.ho.y+=dy} }
+function nodeBox(contours){ let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  contours.forEach(c=>c.forEach(n=>{x0=Math.min(x0,n.x);x1=Math.max(x1,n.x);y0=Math.min(y0,n.y);y1=Math.max(y1,n.y);}));
+  return {x0,x1,y0,y1}; }
+const kernKey = (l,r)=>l.codePointAt(0)+","+r.codePointAt(0);
+
+function sample(){
+  const g = {};
+  BASE.forEach(ch=>g[ch]={adv: ch===" "?260:(/[a-z]/.test(ch)?520:600), contours:[]});
+  g.H={adv:640,contours:[rect(70,0,90,700),rect(480,0,90,700),rect(160,305,320,90)]};
+  g.I={adv:230,contours:[rect(70,0,90,700)]};
+  g.L={adv:520,contours:[rect(70,0,90,700),rect(160,0,310,90)]};
+  g.T={adv:560,contours:[rect(235,0,90,610),rect(30,610,500,90)]};
+  g.E={adv:540,contours:[rect(70,0,90,700),rect(160,0,330,90),rect(160,305,280,90),rect(160,610,330,90)]};
+  g.A={adv:640,contours:[poly([[20,0],[275,700],[365,700],[620,0],[525,0],[455,195],[185,195],[115,0]]),poly([[216,280],[424,280],[320,566]])]};
+  g.V={adv:620,contours:[poly([[20,700],[115,700],[310,110],[505,700],[600,700],[355,0],[265,0]])]};
+  g.N={adv:660,contours:[rect(70,0,90,700),rect(500,0,90,700),poly([[70,700],[170,700],[590,0],[490,0]])]};
+  g.O={adv:700,contours:[ellipse(350,350,300,360),reverse(ellipse(350,350,210,280))]};
+  g.o={adv:560,contours:[ellipse(280,250,230,260),reverse(ellipse(280,250,140,175))]};
+  g.n={adv:560,contours:[rect(70,0,90,500),rect(400,0,90,330),
+    [N(160,400,null,[200,470]),N(280,510,[215,510],[430,510]),N(490,320,[490,450],null),N(400,320,null,[400,390]),N(280,420,[360,420],[215,420]),N(160,330,[190,390],null)]]};
+  g.l={adv:230,contours:[rect(70,0,90,740)]};
+  g.i={adv:230,contours:[rect(70,0,90,500),rect(70,600,90,100)]};
+  const kern={};
+  [["A","V",-70],["V","A",-70],["A","T",-55],["T","A",-55],["L","T",-75],["L","V",-65],["T","O",-20],["O","T",-20]].forEach(([l,r,v])=>kern[kernKey(l,r)]=v);
+  return {family:"Untitled Sans",asc:750,cap:700,xh:500,desc:-250,glyphs:g,kern,trace:{}};
+}
+
+// ---------- state ----------
+let proj = load() || sample();
+function syncChars(){
+  CHARS = BASE.concat((proj.extra||[]).filter(c=>!BASE.includes(c)));
+  CHARS.forEach(ch=>{ if(!proj.glyphs[ch]) proj.glyphs[ch]={adv:500,contours:[]}; });
+  if(!proj.kern) proj.kern={}; if(!proj.trace) proj.trace={};
+}
+syncChars();
+let cur="A", tool="select", active=null;
+let picked=new Set(), hsel=null;      // picked: "ci:ni" node keys; hsel: {ci,ni,part:'hi'|'ho'}
+let history=[], clip=null, hover=null, marq=null, drag=null, moveImg=false;
+const G = ()=>proj.glyphs[cur];
+const key=(ci,ni)=>ci+":"+ni;
+const parseKey=k=>{const i=k.indexOf(":");return {ci:+k.slice(0,i),ni:+k.slice(i+1)}};
+function pickedList(){ const g=G(); return [...picked].map(parseKey).filter(p=>g.contours[p.ci]&&g.contours[p.ci][p.ni]); }
+function groupPicked(){ const m=new Map(); pickedList().forEach(({ci,ni})=>{ if(!m.has(ci)) m.set(ci,[]); m.get(ci).push(ni); }); m.forEach(a=>a.sort((x,y)=>x-y)); return m; }
+function pickContour(ci,add){ const c=G().contours[ci]; if(!add) picked=new Set(); c.forEach((_,ni)=>picked.add(key(ci,ni))); }
+
+function load(){ try{ const s=localStorage.getItem(STORE_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } }
+let saveT, warnedQuota=false;
+function persist(){ clearTimeout(saveT); saveT=setTimeout(()=>{ try{ localStorage.setItem(STORE_KEY,JSON.stringify(proj)); }
+  catch(e){ if(!warnedQuota && e && /quota/i.test(e.name+" "+e.message)){ warnedQuota=true; toast("Too much to auto-save in this browser. Use Save project to keep your work."); } } },400); }
+function snapshot(){ history.push({ch:cur,data:JSON.stringify(G())}); if(history.length>150) history.shift(); }
+function undo(){ const h=history.pop(); if(!h) return toast("Nothing to undo");
+  if(h.all){ proj.glyphs=JSON.parse(h.all); if("slant" in h){ proj.slant=h.slant; proj.italic=h.italic; }
+    if(h.kern) proj.kern=JSON.parse(h.kern); if(h.metrics) Object.assign(proj,h.metrics); $("italicStyle").checked=!!proj.italic; picked.clear(); hsel=null; active=null; renderGrid(); select(h.ch,true); changed(true); return toast(h.what||"Undone"); }
+  proj.glyphs[h.ch]=JSON.parse(h.data); picked.clear(); hsel=null; active=null; select(h.ch,true); changed(); }
+
+function glyphName(ch){ if(/^[A-Za-z]$/.test(ch)) return ch; if(ch===" ") return "space"; return "uni"+ch.codePointAt(0).toString(16).toUpperCase().padStart(4,"0"); }
+function codeOf(ch){ return "U+"+ch.codePointAt(0).toString(16).toUpperCase().padStart(4,"0"); }
+const label = ch=> ch===" " ? "space" : ch;
+
+function pathD(contours){
+  let d="";
+  for(const c of contours){ if(!c.length) continue;
+    d+=`M${c[0].x} ${c[0].y}`;
+    if(c.length>1) for(let i=0;i<c.length;i++){ const a=c[i], b=c[(i+1)%c.length];
+      if(a.ho||b.hi){ const c1=a.ho||a, c2=b.hi||b; d+=`C${c1.x} ${c1.y} ${c2.x} ${c2.y} ${b.x} ${b.y}`; }
+      else d+=`L${b.x} ${b.y}`;
+    }
+    d+="Z";
+  }
+  return d;
+}
+function bbox(g){
+  let xmin=Infinity,xmax=-Infinity;
+  for(const c of g.contours) for(let i=0;i<c.length;i++){ const a=c[i], b=c[(i+1)%c.length];
+    const c1=a.ho||a, c2=b.hi||b;
+    for(let t=0;t<=1;t+=1/16){ const u=1-t; const x=u*u*u*a.x+3*u*u*t*c1.x+3*u*t*t*c2.x+t*t*t*b.x; if(x<xmin)xmin=x; if(x>xmax)xmax=x; }
+  }
+  return xmin===Infinity?null:{xmin:Math.round(xmin),xmax:Math.round(xmax)};
+}
+
+// ---------- glyph grid ----------
+function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c])}
+function thumbSVG(ch){
+  const g=proj.glyphs[ch], w=Math.max(g.adv,300);
+  if(!g.contours.length) return `<svg viewBox="0 0 100 60" aria-hidden="true"><text x="50" y="44" text-anchor="middle" font-size="40" font-family="IBM Plex Sans, sans-serif">${ch===" "?"␣":esc(ch)}</text></svg>`;
+  return `<svg viewBox="${(g.adv-w)/2-40} -900 ${w+80} 1160" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path transform="scale(1,-1)" d="${pathD(g.contours)}" fill="currentColor"/></svg>`;
+}
+function renderGrid(){
+  const grid=$("glyphGrid"); grid.innerHTML="";
+  CHARS.forEach(ch=>{
+    const b=document.createElement("button"); b.className="cell"; b.dataset.ch=ch;
+    b.setAttribute("aria-label","Glyph "+glyphName(ch));
+    b.innerHTML=thumbSVG(ch)+`<span class="lab">${esc(label(ch))}</span>`;
+    b.classList.toggle("empty",!proj.glyphs[ch].contours.length);
+    b.addEventListener("click",()=>select(ch));
+    grid.appendChild(b);
+  });
+  markCurrent(); countDrawn();
+}
+function updateThumb(ch){
+  const b=document.querySelector(`.cell[data-ch="${CSS.escape(ch)}"]`); if(!b) return;
+  b.firstElementChild.outerHTML=thumbSVG(ch); b.classList.toggle("empty",!proj.glyphs[ch].contours.length); countDrawn();
+}
+function markCurrent(){ document.querySelectorAll(".cell").forEach(b=>b.setAttribute("aria-current",b.dataset.ch===cur?"true":"false")); }
+function countDrawn(){ const n=CHARS.filter(c=>proj.glyphs[c].contours.length).length; $("drawnCount").textContent=`${n} / ${CHARS.length} drawn`; }
+function select(ch,keepSel){ if(fx&&fx.ch!==ch) fxReset(); cur=ch; if(!keepSel){ picked=new Set(); hsel=null; active=null; } markCurrent(); render(); inspector(); traceUI(); }
+
+// ---------- drawing board ----------
+let scale=0.4;
+function el(tag,attrs,parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
+function render(){
+  const g=G(); const W=Math.max(g.adv,620)+420, H=1300, x0=g.adv/2-W/2;
+  svg.setAttribute("viewBox",`${x0} -980 ${W} ${H}`);
+  const ctm=svg.getScreenCTM(); if(ctm&&ctm.a) scale=ctm.a;
+  const px=v=>v/scale, nse={"vector-effect":"non-scaling-stroke"};
+  svg.innerHTML="";
+  const under=el("g",{transform:"scale(1,-1)"},svg);
+  for(let x=Math.ceil(x0/100)*100;x<x0+W;x+=100) el("line",{x1:x,y1:-320,x2:x,y2:980,class:"grid",...nse},under);
+  const tr=proj.trace[cur];
+  if(tr) el("image",{href:tr.src,x:tr.x,y:-(tr.y+tr.h),width:tr.w,height:tr.h,opacity:tr.op,preserveAspectRatio:"none",class:"trace"},svg);
+  const world=el("g",{transform:"scale(1,-1)"},svg);
+  const lines=[["descender",proj.desc],["baseline",0],["x-height",proj.xh],["cap height",proj.cap],["ascender",proj.asc]];
+  for(const [name,y] of lines){
+    el("line",{x1:x0,y1:y,x2:x0+W,y2:y,class:"mline"+(y===0?" base":""),...nse},world);
+    const t=el("text",{x:x0+px(10),y:-y-px(5),class:"mlabel","font-size":px(11)},svg); t.textContent=`${name} ${y}`;
+  }
+  el("line",{x1:0,y1:proj.desc-60,x2:0,y2:proj.asc+60,class:"mline base",...nse},world);
+  if(showGuides()) (proj.guides||[]).forEach((gd,gi)=>{
+    const on=drag&&drag.mode==="guide"&&drag.gi===gi;
+    if(gd.dir==="h"){
+      el("line",{x1:x0,y1:gd.pos,x2:x0+W,y2:gd.pos,class:"guide"+(on?" on":""),...nse},world);
+      el("line",{x1:x0,y1:gd.pos,x2:x0+W,y2:gd.pos,class:"guidehit h","data-kind":"guide","data-gi":gi,...nse},world);
+      const t=el("text",{x:x0+W-px(8),y:-gd.pos-px(5),class:"glabel","text-anchor":"end","font-size":px(11)},svg); t.textContent=gd.pos;
+    } else {
+      el("line",{x1:gd.pos,y1:-320,x2:gd.pos,y2:980,class:"guide"+(on?" on":""),...nse},world);
+      el("line",{x1:gd.pos,y1:-320,x2:gd.pos,y2:980,class:"guidehit v","data-kind":"guide","data-gi":gi,...nse},world);
+      const t=el("text",{x:gd.pos+px(5),y:-980+px(16),class:"glabel","font-size":px(11)},svg); t.textContent=gd.pos;
+    }
+  });
+  el("path",{d:pathD(g.contours),class:"fill","fill-rule":"nonzero",...nse},world);
+  g.contours.forEach((c,ci)=>{
+    const all=c.length&&c.every((_,ni)=>picked.has(key(ci,ni)));
+    el("path",{d:pathD([c]),class:"hit"+(all?" sel":""),"data-kind":"contour","data-ci":ci,...nse},world);
+  });
+  el("line",{x1:g.adv,y1:proj.desc-60,x2:g.adv,y2:proj.asc+60,class:"adv",...nse},world);
+  el("line",{x1:g.adv,y1:proj.desc-60,x2:g.adv,y2:proj.asc+60,class:"advhit","data-kind":"adv",...nse},world);
+  const at=el("text",{x:g.adv+px(6),y:-(proj.desc-40),class:"mlabel","font-size":px(11)},svg); at.textContent=`advance ${g.adv}`;
+  const r=px(5.5), hr=px(4);
+  g.contours.forEach((c,ci)=>c.forEach((n,ni)=>{
+    for(const part of ["hi","ho"]) if(n[part]){
+      el("line",{x1:n.x,y1:n.y,x2:n[part].x,y2:n[part].y,class:"hline",...nse},world);
+      const isSel=hsel&&hsel.ci===ci&&hsel.ni===ni&&hsel.part===part;
+      el("circle",{cx:n[part].x,cy:n[part].y,r:hr,class:"handle"+(isSel?" sel":""),"data-kind":part,"data-ci":ci,"data-ni":ni,...nse},world);
+    }
+  }));
+  g.contours.forEach((c,ci)=>c.forEach((n,ni)=>{
+    const cls="node"+(picked.has(key(ci,ni))?" sel":"")+(ni===0?" start":"");
+    const attrs={class:cls,"data-kind":"node","data-ci":ci,"data-ni":ni,...nse};
+    if(n.hi&&n.ho) el("circle",{cx:n.x,cy:n.y,r,...attrs},world);
+    else el("rect",{x:n.x-r,y:n.y-r,width:2*r,height:2*r,...attrs},world);
+  }));
+  if(marq){ const xa=Math.min(marq.a.x,marq.b.x), xb=Math.max(marq.a.x,marq.b.x), ya=Math.min(marq.a.y,marq.b.y), yb=Math.max(marq.a.y,marq.b.y);
+    el("rect",{x:xa,y:-yb,width:xb-xa,height:yb-ya,class:"marquee",...nse},svg); }
+  svg.classList.toggle("pen",tool==="pen");
+  svg.classList.toggle("moveimg",tool==="select"&&moveImg&&!!tr);
+}
+
+function toFont(e,target){ const t=target||svg; const p=t.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; const q=p.matrixTransform(t.getScreenCTM().inverse()); return {x:q.x,y:-q.y}; }
+function snapv(v){ return $("snap").checked?Math.round(v/10)*10:Math.round(v); }
+// ---------- guides ----------
+function showGuides(){ return $("guideShow").checked; }
+function guideSnap(v,dir){
+  if(showGuides() && $("guideSnap").checked){
+    const reach=8/scale; let best=null;
+    (proj.guides||[]).forEach(gd=>{ if(gd.dir===dir && Math.abs(gd.pos-v)<=reach && (best===null||Math.abs(gd.pos-v)<Math.abs(best-v))) best=gd.pos; });
+    if(best!==null) return best;
+  }
+  return snapv(v);
+}
+const snapX=v=>guideSnap(v,"v"), snapY=v=>guideSnap(v,"h");
+function addGuide(dir){
+  if(!proj.guides) proj.guides=[];
+  if(!showGuides()) $("guideShow").checked=true;
+  let pos = dir==="h" ? Math.round(proj.xh/2/10)*10 : Math.round(G().adv/2/10)*10;
+  while(proj.guides.some(gd=>gd.dir===dir&&gd.pos===pos)) pos+=50;
+  proj.guides.push({dir,pos}); guideUI(); render(); persist();
+  toast(dir==="h"?"Guide added. Drag it up or down to place it.":"Guide added. Drag it left or right to place it.");
+}
+function guideUI(){
+  const box=$("guideList"); box.innerHTML="";
+  (proj.guides||[]).forEach((gd,gi)=>{
+    const r=document.createElement("div"); r.className="grow";
+    r.innerHTML=`<span>${gd.dir==="h"?"Across at":"Up and down at"}</span><input type="number" step="1" value="${gd.pos}" aria-label="Guide position"><button class="btn" title="Remove this guide" aria-label="Remove guide">✕</button>`;
+    r.querySelector("input").addEventListener("change",e=>{ const v=Math.round(+e.target.value); if(isFinite(v)){ gd.pos=v; render(); persist(); } });
+    r.querySelector("button").onclick=()=>{ proj.guides.splice(gi,1); guideUI(); render(); persist(); };
+    box.appendChild(r);
+  });
+}
+$("addGuideH").onclick=()=>addGuide("h"); $("addGuideV").onclick=()=>addGuide("v"); $("tbGuideH").onclick=()=>addGuide("h"); $("tbGuideV").onclick=()=>addGuide("v");
+$("guideShow").onchange=()=>render();
+
+svg.addEventListener("pointerdown",e=>{
+  if(e.button!==0) return;
+  const t=e.target, kind=t.dataset&&t.dataset.kind, pt=toFont(e), g=G();
+  const ci=+t.dataset.ci, ni=+t.dataset.ni;
+  if(tool==="pen"){
+    if(active!==null && kind==="node" && ci===active && ni===0 && g.contours[active] && g.contours[active].length>=3){
+      active=null; picked=new Set(); render(); inspector(); setHint(); return; }
+    snapshot();
+    if(active===null || !g.contours[active]){ g.contours.push([]); active=g.contours.length-1; }
+    const node={x:snapX(pt.x),y:snapY(pt.y),hi:null,ho:null};
+    g.contours[active].push(node);
+    picked=new Set([key(active,g.contours[active].length-1)]); hsel=null;
+    drag={mode:"pen",node,start:pt,dirty:true};
+  } else if(kind==="node"){
+    const k=key(ci,ni); hsel=null;
+    if(e.shiftKey){ picked.has(k)?picked.delete(k):picked.add(k); render(); inspector(); return; }
+    if(!picked.has(k)) picked=new Set([k]);
+    drag={mode:"move",start:pt,orig:clone(g.contours),anchor:{...g.contours[ci][ni]}};
+  } else if(kind==="hi"||kind==="ho"){
+    picked=new Set(); hsel={ci,ni,part:kind};
+    drag={mode:"handle",orig:clone(g.contours[ci][ni])};
+  } else if(kind==="contour"){
+    hsel=null; const c=g.contours[ci];
+    if(e.shiftKey) pickContour(ci,true);
+    else if(!c.every((_,i)=>picked.has(key(ci,i)))) pickContour(ci,false);
+    drag={mode:"move",start:pt,orig:clone(g.contours),anchor:{...c[0]}};
+  } else if(kind==="guide"){
+    drag={mode:"guide",gi:+t.dataset.gi};
+  } else if(kind==="adv"){
+    drag={mode:"adv"};
+  } else if(moveImg && proj.trace[cur]){
+    drag={mode:"img",start:pt,orig:{...proj.trace[cur]}};
+  } else {
+    hsel=null; if(!e.shiftKey) picked=new Set();
+    drag={mode:"marq",base:new Set(picked)}; marq={a:pt,b:pt};
+  }
+  svg.setPointerCapture(e.pointerId);
+  render(); inspector(); setHint();
+});
+svg.addEventListener("pointermove",e=>{
+  const pt=toFont(e); hover=pt;
+  if(!drag) return; const g=G();
+  const needsSnap = ["move","handle","adv"].includes(drag.mode);
+  if(needsSnap && !drag.dirty){ snapshot(); drag.dirty=true; }
+  if(drag.mode==="pen"){
+    const dx=pt.x-drag.node.x, dy=pt.y-drag.node.y;
+    if(Math.hypot(dx,dy)*scale>5){ drag.node.ho={x:snapX(pt.x),y:snapY(pt.y)}; drag.node.hi={x:snapv(drag.node.x-dx),y:snapv(drag.node.y-dy)}; }
+  } else if(drag.mode==="move"){
+    const a=drag.anchor, dx=snapX(a.x+pt.x-drag.start.x)-a.x, dy=snapY(a.y+pt.y-drag.start.y)-a.y;
+    pickedList().forEach(({ci,ni})=>{ const o=drag.orig[ci][ni], n=g.contours[ci][ni];
+      n.x=o.x+dx; n.y=o.y+dy; n.hi=o.hi?{x:o.hi.x+dx,y:o.hi.y+dy}:null; n.ho=o.ho?{x:o.ho.x+dx,y:o.ho.y+dy}:null; });
+  } else if(drag.mode==="handle"){
+    const n=g.contours[hsel.ci][hsel.ni], part=hsel.part, other=part==="hi"?"ho":"hi";
+    n[part]={x:snapX(pt.x),y:snapY(pt.y)};
+    if(drag.orig[other] && !e.altKey){
+      const len=Math.hypot(drag.orig[other].x-n.x,drag.orig[other].y-n.y), vx=n.x-n[part].x, vy=n.y-n[part].y, vl=Math.hypot(vx,vy)||1;
+      n[other]={x:Math.round(n.x+vx/vl*len),y:Math.round(n.y+vy/vl*len)};
+    }
+  } else if(drag.mode==="adv"){ g.adv=Math.max(0,snapX(pt.x)); }
+  else if(drag.mode==="guide"){ const gd=proj.guides[drag.gi]; gd.pos=snapv(gd.dir==="h"?pt.y:pt.x); drag.gone=offBoard(e); render(); return; }
+  else if(drag.mode==="img"){ const tr=proj.trace[cur]; tr.x=Math.round(drag.orig.x+pt.x-drag.start.x); tr.y=Math.round(drag.orig.y+pt.y-drag.start.y); drag.imgMoved=true; }
+  else if(drag.mode==="marq"){
+    marq.b=pt; const xa=Math.min(marq.a.x,pt.x), xb=Math.max(marq.a.x,pt.x), ya=Math.min(marq.a.y,pt.y), yb=Math.max(marq.a.y,pt.y);
+    picked=new Set(drag.base);
+    g.contours.forEach((c,ci)=>c.forEach((n,ni)=>{ if(n.x>=xa&&n.x<=xb&&n.y>=ya&&n.y<=yb) picked.add(key(ci,ni)); }));
+    render(); inspector(); return;
+  }
+  render(); inspector();
+  if(drag.dirty) scheduleBuild();
+});
+svg.addEventListener("pointerleave",()=>{ if(!drag) hover=null; });
+function offBoard(e){ const b=svg.getBoundingClientRect(); return e.clientX<b.left||e.clientX>b.right||e.clientY<b.top||e.clientY>b.bottom; }
+function endDrag(e){
+  if(!drag) return; const d=drag; drag=null;
+  if(d.mode==="guide"){ if(d.gone||(e&&e.type==="pointerup"&&offBoard(e))){ proj.guides.splice(d.gi,1); toast("Guide removed"); } guideUI(); render(); persist(); return; }
+  if(d.mode==="marq"){ marq=null; render(); inspector(); return; }
+  if(d.mode==="img"){ if(d.imgMoved) persist(); return; }
+  if(d.dirty) changed();
+}
+svg.addEventListener("pointerup",endDrag); svg.addEventListener("pointercancel",endDrag);
+svg.addEventListener("dblclick",e=>{
+  if(tool!=="select") return; const t=e.target; if(t.dataset.kind!=="node") return;
+  picked=new Set([key(+t.dataset.ci,+t.dataset.ni)]); hsel=null; toggleCurve();
+});
+// drop an image to trace
+svg.addEventListener("dragover",e=>{ if([...e.dataTransfer.types].includes("Files")){ e.preventDefault(); svg.classList.add("dropping"); } });
+svg.addEventListener("dragleave",()=>svg.classList.remove("dropping"));
+svg.addEventListener("drop",e=>{ e.preventDefault(); svg.classList.remove("dropping"); const f=e.dataTransfer.files[0]; if(!f) return;
+  if(/svg/i.test(f.type)||/\.svg$/i.test(f.name)) f.text().then(t=>importSVG(t));
+  else if(/\.(ttf|otf|ttc|woff2?|dfont|json)$/i.test(f.name)) openFontFile(f);
+  else loadTrace(f); });
+
+// ---------- editing actions ----------
+function toggleCurve(){
+  const pl=pickedList(); if(!pl.length) return; const g=G();
+  snapshot();
+  const anyCurved=pl.some(({ci,ni})=>{const n=g.contours[ci][ni]; return n.hi||n.ho;});
+  pl.forEach(({ci,ni})=>{ const c=g.contours[ci], n=c[ni];
+    if(anyCurved){ n.hi=null; n.ho=null; return; }
+    const p=c[(ni-1+c.length)%c.length], q=c[(ni+1)%c.length];
+    const vx=q.x-p.x, vy=q.y-p.y, l=Math.hypot(vx,vy)||1, d=Math.min(Math.hypot(n.x-p.x,n.y-p.y),Math.hypot(q.x-n.x,q.y-n.y))/3;
+    n.hi={x:Math.round(n.x-vx/l*d),y:Math.round(n.y-vy/l*d)}; n.ho={x:Math.round(n.x+vx/l*d),y:Math.round(n.y+vy/l*d)};
+  });
+  changed();
+}
+function deleteSel(){
+  const g=G();
+  if(hsel){ snapshot(); const n=g.contours[hsel.ci]&&g.contours[hsel.ci][hsel.ni]; if(n) n[hsel.part]=null; hsel=null; return changed(); }
+  const by=groupPicked(); if(!by.size) return;
+  snapshot();
+  [...by.keys()].sort((a,b)=>b-a).forEach(ci=>{ const c=g.contours[ci]; by.get(ci).slice().reverse().forEach(ni=>c.splice(ni,1)); if(c.length<2) g.contours.splice(ci,1); });
+  picked=new Set(); active=null; changed();
+}
+function reverseSel(){
+  const by=groupPicked(); if(!by.size) return toast("Select a shape first");
+  snapshot(); const g=G(); picked=new Set();
+  by.forEach((_,ci)=>{ g.contours[ci]=reverse(g.contours[ci]); pickContour(ci,true); });
+  changed(); toast(by.size>1?"Contour directions reversed":"Contour direction reversed");
+}
+function flip(axis){
+  const g=G(); const sel=picked.size>0;
+  const targets = sel ? pickedList() : g.contours.flatMap((c,ci)=>c.map((_,ni)=>({ci,ni})));
+  if(!targets.length) return toast("Nothing to flip yet");
+  snapshot();
+  let c0;
+  if(axis==="x" && !sel) c0=g.adv/2;
+  else { const v=targets.map(t=>g.contours[t.ci][t.ni][axis]); c0=(Math.min(...v)+Math.max(...v))/2; }
+  const f=v=>Math.round(2*c0-v);
+  targets.forEach(({ci,ni})=>{ const n=g.contours[ci][ni]; n[axis]=f(n[axis]); if(n.hi) n.hi[axis]=f(n.hi[axis]); if(n.ho) n.ho[axis]=f(n.ho[axis]); });
+  // a fully mirrored contour runs the other way round; reverse it so holes stay holes
+  const count=new Map(); targets.forEach(t=>count.set(t.ci,(count.get(t.ci)||0)+1));
+  const full=new Set([...count].filter(([ci,n])=>n===g.contours[ci].length).map(([ci])=>ci));
+  full.forEach(ci=>{ g.contours[ci]=reverse(g.contours[ci]); });
+  if(sel) picked=new Set(targets.map(({ci,ni})=>full.has(ci)?key(ci,g.contours[ci].length-1-ni):key(ci,ni)));
+  changed();
+}
+function copySel(cut){
+  const g=G(); let contours, whole=false, n=0;
+  const by=groupPicked();
+  if(by.size){
+    contours=[];
+    by.forEach((nis,ci)=>{ const c=g.contours[ci];
+      if(nis.length===c.length) contours.push(clone(c));
+      else if(nis.length>=2) contours.push(nis.map(i=>clone(c[i])));
+    });
+    if(!contours.length) return toast("Select at least 2 points to copy");
+    n=contours.reduce((s,c)=>s+c.length,0);
+  } else {
+    if(!g.contours.length) return toast("Nothing to copy. This letter is empty");
+    contours=clone(g.contours); whole=true;
+  }
+  clip={contours,whole,from:cur,adv:g.adv};
+  $("pasteBtn").disabled=false;
+  if(cut){ if(whole){ snapshot(); g.contours=[]; picked=new Set(); changed(); } else deleteSel(); }
+  toast((cut?"Cut ":"Copied ")+(whole?`the whole letter ${label(cur)}`:`${n} point${n===1?"":"s"}`)+". Paste into any letter.");
+}
+function paste(atMouse){
+  if(!clip) return toast("Copy something first");
+  const g=G(); snapshot();
+  let cs=clone(clip.contours), dx=0, dy=0;
+  if(atMouse && hover && !clip.whole){ const b=nodeBox(cs); dx=snapv(hover.x-(b.x0+b.x1)/2); dy=snapv(hover.y-(b.y0+b.y1)/2); }
+  else if(clip.from===cur){ dx=30; dy=-30; }
+  cs.forEach(c=>c.forEach(n=>moveNode(n,dx,dy)));
+  if(clip.whole && !g.contours.length) g.adv=clip.adv;
+  const start=g.contours.length; g.contours.push(...cs);
+  picked=new Set(); cs.forEach((c,i)=>pickContour(start+i,true)); hsel=null; active=null;
+  changed();
+}
+function addFromLetter(){
+  const ch=[...$("copyFrom").value][0];
+  if(!ch) return toast("Type the letter to copy from");
+  const src=proj.glyphs[ch];
+  if(!src) return toast(`${ch} isn't in this font's glyph set`);
+  if(!src.contours.length) return toast(`${label(ch)} hasn't been drawn yet`);
+  if(ch===cur) return toast("Pick a different letter to copy from");
+  const g=G(); snapshot();
+  if(!g.contours.length) g.adv=src.adv;
+  const start=g.contours.length; g.contours.push(...clone(src.contours));
+  picked=new Set(); for(let i=start;i<g.contours.length;i++) pickContour(i,true); hsel=null;
+  changed(); toast(`Added the outlines of ${label(ch)}. They're selected, so you can move or flip them.`);
+}
+
+// ---------- inspector ----------
+function inspector(){
+  const g=G(); $("insChar").textContent=cur===" "?"␣":cur; $("insName").textContent=glyphName(cur); $("insCode").textContent=codeOf(cur);
+  const nodes=g.contours.reduce((s,c)=>s+c.length,0);
+  $("insCounts").textContent=`${g.contours.length} contour${g.contours.length===1?"":"s"} · ${nodes} points`;
+  const bb=bbox(g);
+  setVal("adv",g.adv); setVal("lsb",bb?bb.xmin:""); setVal("rsb",bb?g.adv-bb.xmax:"");
+  $("lsb").disabled=$("rsb").disabled=!bb;
+  const pl=pickedList(); let single=null, info="";
+  if(hsel){ const n=g.contours[hsel.ci]&&g.contours[hsel.ci][hsel.ni]; single=n&&n[hsel.part]; info="Curve handle selected"; }
+  else if(pl.length===1){ const n=g.contours[pl[0].ci][pl[0].ni]; single=n; info="1 point selected · "+(n.hi||n.ho?"curved":"sharp"); }
+  else if(pl.length){ const cs=new Set(pl.map(p=>p.ci)).size; info=`${pl.length} points selected in ${cs} contour${cs===1?"":"s"}`; }
+  const has=!!info;
+  $("selNone").hidden=has; $("selInfo").hidden=!has; $("selInfo").textContent=info;
+  $("selActions").hidden=!has; $("toggleCurve").hidden=!pl.length; $("reverseBtn").hidden=!pl.length;
+  $("selFields").hidden=!single; if(single){ setVal("selX",single.x); setVal("selY",single.y); }
+  $("flipNote").textContent=pl.length?"Flips the selected points":"Flips the whole letter";
+  $("slantOne").textContent=pl.length?"Slant selected points":"Slant this letter";
+  $("scaleOne").textContent=pl.length?"Scale selected points":"Scale this letter";
+  setVal("mAsc",proj.asc); setVal("mCap",proj.cap); setVal("mXh",proj.xh); setVal("mDesc",proj.desc);
+}
+function setVal(id,v){ const i=$(id); if(document.activeElement!==i) i.value=v; }
+function numInput(id,fn){ $(id).addEventListener("change",e=>{ const v=Math.round(+e.target.value); if(e.target.value===""||!Number.isFinite(v)) return inspector(); fn(v); }); }
+numInput("adv",v=>{ snapshot(); G().adv=Math.max(0,v); changed(); });
+numInput("lsb",v=>{ const g=G(), bb=bbox(g); if(!bb) return; snapshot(); const dx=v-bb.xmin; g.contours.forEach(c=>c.forEach(n=>moveNode(n,dx,0))); g.adv+=dx; changed(); });
+numInput("rsb",v=>{ const g=G(), bb=bbox(g); if(!bb) return; snapshot(); g.adv=Math.max(0,bb.xmax+v); changed(); });
+function setSelCoord(axis,v){
+  const g=G();
+  if(hsel){ const n=g.contours[hsel.ci][hsel.ni]; if(!n[hsel.part]) return; snapshot(); n[hsel.part][axis]=v; return changed(); }
+  const pl=pickedList(); if(pl.length!==1) return;
+  snapshot(); const n=g.contours[pl[0].ci][pl[0].ni], d=v-n[axis];
+  moveNode(n,axis==="x"?d:0,axis==="y"?d:0); changed();
+}
+numInput("selX",v=>setSelCoord("x",v)); numInput("selY",v=>setSelCoord("y",v));
+numInput("mAsc",v=>{proj.asc=v;changed(true)}); numInput("mCap",v=>{proj.cap=v;changed(true)});
+numInput("mXh",v=>{proj.xh=v;changed(true)}); numInput("mDesc",v=>{proj.desc=Math.min(0,v);changed(true)});
+
+$("toggleCurve").onclick=toggleCurve; $("reverseBtn").onclick=reverseSel; $("deleteBtn").onclick=deleteSel;
+$("copyBtn").onclick=()=>copySel(false); $("pasteBtn").onclick=()=>paste(false);
+$("flipH").onclick=()=>flip("x"); $("flipV").onclick=()=>flip("y");
+$("copyFromBtn").onclick=addFromLetter;
+$("copyFrom").addEventListener("keydown",e=>{ if(e.key==="Enter") addFromLetter(); });
+function addShape(c,msg){ snapshot(); const g=G(); g.contours.push(c); picked=new Set(); pickContour(g.contours.length-1,false); hsel=null; changed(); if(msg) toast(msg); }
+$("addRect").onclick=()=>addShape(rect(Math.round(G().adv/2/10)*10-150,0,300,proj.xh));
+$("addEllipse").onclick=()=>addShape(ellipse(Math.round(G().adv/2),Math.round(proj.xh/2),220,proj.xh/2+10));
+$("addCounter").onclick=()=>addShape(reverse(ellipse(Math.round(G().adv/2),Math.round(proj.xh/2),120,proj.xh/3)),"Counters run the opposite direction, so they cut a hole");
+$("clearGlyph").onclick=e=>armed(e.currentTarget,"Clear letter","Click again to clear",()=>{ snapshot(); G().contours=[]; picked=new Set(); hsel=null; active=null; changed(); });
+function blankFont(){
+  const g={}; BASE.forEach(ch=>g[ch]={adv: ch===" "?260:(/[a-z]/.test(ch)?520:600), contours:[]});
+  return {family:"Untitled Sans",asc:750,cap:700,xh:500,desc:-250,glyphs:g,kern:{},trace:{}};
+}
+$("newFont").onclick=e=>armed(e.currentTarget,"New font","Click again: clears this font",()=>{ adopt(blankFont(),"New blank font. Pick a letter and start drawing."); setTool("pen"); $("family").focus(); $("family").select(); });
+$("resetBtn").onclick=e=>armed(e.currentTarget,"Start over with sample","Click again: this erases your work",()=>{ adopt(sample(),"Started over with the sample font"); });
+function armed(btn,lab,confirmLabel,fn){
+  if(btn.dataset.armed){ delete btn.dataset.armed; btn.textContent=lab; fn(); return; }
+  btn.dataset.armed="1"; btn.textContent=confirmLabel; setTimeout(()=>{ if(btn.dataset.armed){delete btn.dataset.armed; btn.textContent=lab;} },3000);
+}
+
+// ---------- italic slant ----------
+// Shear x by tan(angle) around half the x-height, so slanted letters stay centred in their width.
+function shear(contours,t,y0){ const f=p=>{ p.x=Math.round(p.x+(p.y-y0)*t); }; contours.forEach(c=>c.forEach(n=>{ f(n); if(n.hi) f(n.hi); if(n.ho) f(n.ho); })); }
+function readAngle(){ const a=+$("slantAngle").value; if(!Number.isFinite(a)||a===0||Math.abs(a)>45){ toast("Use a slant between -45 and 45 degrees"); return null; } return a; }
+$("slantOne").onclick=()=>{
+  const a=readAngle(); if(a===null) return;
+  const g=G(), t=Math.tan(a*Math.PI/180), y0=Math.round(proj.xh/2), pl=pickedList();
+  if(!pl.length && !g.contours.length) return toast("This letter is empty");
+  snapshot();
+  if(pl.length) shear(pl.map(({ci,ni})=>[g.contours[ci][ni]]),t,y0); else shear(g.contours,t,y0);
+  changed();
+};
+$("slantAll").onclick=()=>{
+  const a=readAngle(); if(a===null) return;
+  const t=Math.tan(a*Math.PI/180), y0=Math.round(proj.xh/2);
+  history.push({all:JSON.stringify(proj.glyphs),ch:cur,slant:proj.slant||0,italic:!!proj.italic,what:"Slant undone"});
+  let n=0; CHARS.forEach(ch=>{ const g=proj.glyphs[ch]; if(g.contours.length){ shear(g.contours,t,y0); n++; } });
+  proj.slant=(proj.slant||0)+a;
+  if(!proj.italic && proj.slant>0){ proj.italic=true; $("italicStyle").checked=true; }
+  picked=new Set(); hsel=null; changed(true);
+  toast(`Slanted ${n} letters by ${a}°. Undo puts them back.`);
+};
+$("italicStyle").addEventListener("change",e=>{ proj.italic=e.target.checked; persist(); scheduleBuild(); });
+
+// ---------- import SVG artwork ----------
+let pasteSeen=false, pasteTimer=null;
+document.addEventListener("paste",e=>{
+  if(e.target && e.target.matches && e.target.matches("input,textarea,select")) return;
+  pasteSeen=true; const dt=e.clipboardData; if(!dt) return;
+  const texts=[dt.getData("image/svg+xml"),dt.getData("text/plain"),dt.getData("text/html")];
+  const svgText=texts.find(t=>t && /<svg[\s>]/i.test(t));
+  if(svgText){ e.preventDefault(); importSVG(svgText); return; }
+  const files=[...dt.files];
+  const svgFile=files.find(f=>/svg/i.test(f.type));
+  if(svgFile){ e.preventDefault(); svgFile.text().then(t=>importSVG(t)); return; }
+  const img=files.find(f=>/^image\//.test(f.type));
+  if(img && !clip){ e.preventDefault(); loadTrace(img); toast("Pasted as a tracing image. For editable outlines, copy as SVG (see Import artwork)."); return; }
+  e.preventDefault(); paste(true);
+});
+$("artFileBtn").onclick=()=>$("artFile").click();
+$("artFile").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f) f.text().then(t=>importSVG(t)); });
+$("artCodeBtn").onclick=()=>{ const b=$("artCodeBox"); b.hidden=!b.hidden; if(!b.hidden) $("artCode").focus(); };
+$("artCodeGo").onclick=()=>{ const t=$("artCode").value.trim(); if(!t) return toast("Paste SVG code into the box first"); if(importSVG(t)){ $("artCode").value=""; $("artCodeBox").hidden=true; } };
+
+// Reads SVG path data into closed contours of {x,y,hi,ho} nodes (absolute coordinates, curves as cubics).
+function pathToContours(d){
+  const out=[]; let c=null, i=0, cx=0, cy=0, sx=0, sy=0, pcx=null, pcy=null, pqx=null, pqy=null, cmd="", closed=true;
+  const numRe=/[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/y;
+  const ws=()=>{ while(i<d.length && /[\s,]/.test(d[i])) i++; };
+  const num=()=>{ ws(); numRe.lastIndex=i; const m=numRe.exec(d); if(!m) throw new Error("bad number"); i=numRe.lastIndex; return +m[0]; };
+  const flag=()=>{ ws(); const ch=d[i]; if(ch!=="0"&&ch!=="1") throw new Error("bad flag"); i++; return ch==="1"; };
+  const more=()=>{ ws(); return i<d.length && /[-+.\d]/.test(d[i]); };
+  const finish=()=>{ if(!c) return;
+    if(c.length>1){ const a=c[0], z=c[c.length-1]; if(Math.abs(a.x-z.x)<1e-6&&Math.abs(a.y-z.y)<1e-6){ a.hi=z.hi; c.pop(); } }
+    if(c.length>=2) out.push(c); c=null; };
+  const start=(x,y)=>{ finish(); c=[{x,y,hi:null,ho:null}]; sx=cx=x; sy=cy=y; };
+  const ensure=()=>{ if(!c) start(cx,cy); };
+  const line=(x,y)=>{ ensure(); c.push({x,y,hi:null,ho:null}); cx=x; cy=y; };
+  const cubic=(x1,y1,x2,y2,x,y)=>{ ensure(); c[c.length-1].ho={x:x1,y:y1}; c.push({x,y,hi:{x:x2,y:y2},ho:null}); cx=x; cy=y; };
+  while(true){
+    ws(); if(i>=d.length) break;
+    if(/[A-Za-z]/.test(d[i])) cmd=d[i++];
+    else if(!cmd) throw new Error("path must start with a command");
+    const rel=cmd===cmd.toLowerCase(), C=cmd.toUpperCase();
+    const ox=()=>rel?cx:0, oy=()=>rel?cy:0;
+    if(C==="Z"){ finish(); cx=sx; cy=sy; pcx=pqx=null; if(!more()&&!/[A-Za-z]/.test(d[i]||"")) continue; continue; }
+    if(C==="M"){ const x=num()+ox(), y=num()+oy(); start(x,y); cmd=rel?"l":"L"; pcx=pqx=null; continue; }
+    if(C==="L"){ line(num()+ox(),num()+oy()); pcx=pqx=null; }
+    else if(C==="H"){ line(num()+ox(),cy); pcx=pqx=null; }
+    else if(C==="V"){ line(cx,num()+oy()); pcx=pqx=null; }
+    else if(C==="C"){ const a=[num()+ox(),num()+oy(),num()+ox(),num()+oy(),num()+ox(),num()+oy()]; cubic(...a); pcx=a[2]; pcy=a[3]; pqx=null; }
+    else if(C==="S"){ const x1=pcx!==null?2*cx-pcx:cx, y1=pcx!==null?2*cy-pcy:cy; const a=[num()+ox(),num()+oy(),num()+ox(),num()+oy()]; cubic(x1,y1,...a); pcx=a[0]; pcy=a[1]; pqx=null; }
+    else if(C==="Q"||C==="T"){
+      let qx,qy; if(C==="Q"){ qx=num()+ox(); qy=num()+oy(); } else { qx=pqx!==null?2*cx-pqx:cx; qy=pqx!==null?2*cy-pqy:cy; }
+      const x=num()+ox(), y=num()+oy();
+      cubic(cx+2/3*(qx-cx),cy+2/3*(qy-cy),x+2/3*(qx-x),y+2/3*(qy-y),x,y); pqx=qx; pqy=qy; pcx=null; }
+    else if(C==="A"){
+      const rx=num(), ry=num(), rot=num(), fa=flag(), fs=flag(), x=num()+ox(), y=num()+oy();
+      arcToCubics(cx,cy,rx,ry,rot,fa,fs,x,y).forEach(s=>cubic(...s)); pcx=pqx=null; }
+    else throw new Error("unknown command "+cmd);
+  }
+  finish(); return out;
+}
+function arcToCubics(x1,y1,rx,ry,phiDeg,fa,fs,x2,y2){
+  if((x1===x2&&y1===y2)) return [];
+  rx=Math.abs(rx); ry=Math.abs(ry); if(!rx||!ry) return [[x1,y1,x2,y2,x2,y2]];
+  const phi=phiDeg*Math.PI/180, cp=Math.cos(phi), sp=Math.sin(phi);
+  const dx=(x1-x2)/2, dy=(y1-y2)/2, x1p=cp*dx+sp*dy, y1p=-sp*dx+cp*dy;
+  let L=x1p*x1p/(rx*rx)+y1p*y1p/(ry*ry); if(L>1){ const s=Math.sqrt(L); rx*=s; ry*=s; }
+  const num=rx*rx*ry*ry-rx*rx*y1p*y1p-ry*ry*x1p*x1p, den=rx*rx*y1p*y1p+ry*ry*x1p*x1p;
+  let co=Math.sqrt(Math.max(0,num/den)); if(fa===fs) co=-co;
+  const cxp=co*rx*y1p/ry, cyp=-co*ry*x1p/rx;
+  const ccx=cp*cxp-sp*cyp+(x1+x2)/2, ccy=sp*cxp+cp*cyp+(y1+y2)/2;
+  const ang=(ux,uy,vx,vy)=>{ const a=Math.atan2(ux*vy-uy*vx,ux*vx+uy*vy); return a; };
+  let t1=ang(1,0,(x1p-cxp)/rx,(y1p-cyp)/ry), dt=ang((x1p-cxp)/rx,(y1p-cyp)/ry,(-x1p-cxp)/rx,(-y1p-cyp)/ry);
+  if(!fs&&dt>0) dt-=2*Math.PI; else if(fs&&dt<0) dt+=2*Math.PI;
+  const n=Math.ceil(Math.abs(dt)/(Math.PI/2)-1e-9), seg=dt/n, k=4/3*Math.tan(seg/4), out=[];
+  const pt=(t)=>[ccx+rx*Math.cos(t)*cp-ry*Math.sin(t)*sp, ccy+rx*Math.cos(t)*sp+ry*Math.sin(t)*cp];
+  const dv=(t)=>[-rx*Math.sin(t)*cp-ry*Math.cos(t)*sp, -rx*Math.sin(t)*sp+ry*Math.cos(t)*cp];
+  for(let j=0;j<n;j++){ const a=t1+j*seg, b=a+seg, p0=pt(a), p1=pt(b), d0=dv(a), d1=dv(b);
+    out.push([p0[0]+k*d0[0],p0[1]+k*d0[1],p1[0]-k*d1[0],p1[1]-k*d1[1],j===n-1?x2:p1[0],j===n-1?y2:p1[1]]); }
+  return out;
+}
+function shapeToD(el,tag){
+  const v=a=>{ try{ return el[a].baseVal.value; }catch(e){ return parseFloat(el.getAttribute(a))||0; } };
+  if(tag==="path") return el.getAttribute("d");
+  if(tag==="rect"){ const x=v("x"),y=v("y"),w=v("width"),h=v("height"); let rx=el.hasAttribute("rx")?v("rx"):0, ry=el.hasAttribute("ry")?v("ry"):0;
+    if(!w||!h) return null; if(!rx) rx=ry; if(!ry) ry=rx; rx=Math.min(rx,w/2); ry=Math.min(ry,h/2);
+    if(!rx) return `M${x},${y}H${x+w}V${y+h}H${x}Z`;
+    return `M${x+rx},${y}H${x+w-rx}A${rx},${ry} 0 0 1 ${x+w},${y+ry}V${y+h-ry}A${rx},${ry} 0 0 1 ${x+w-rx},${y+h}H${x+rx}A${rx},${ry} 0 0 1 ${x},${y+h-ry}V${y+ry}A${rx},${ry} 0 0 1 ${x+rx},${y}Z`; }
+  if(tag==="circle"||tag==="ellipse"){ const cx=v("cx"),cy=v("cy"), rx=tag==="circle"?v("r"):v("rx"), ry=tag==="circle"?v("r"):v("ry"); if(!rx||!ry) return null;
+    return `M${cx-rx},${cy}A${rx},${ry} 0 1 0 ${cx+rx},${cy}A${rx},${ry} 0 1 0 ${cx-rx},${cy}Z`; }
+  if(tag==="polygon"||tag==="polyline"){ const pts=(el.getAttribute("points")||"").trim(); if(!pts) return null; return "M"+pts+"Z"; }
+  return null;
+}
+function isWhite(fill){ const m=/rgba?\(([^)]+)\)/.exec(fill||""); if(!m) return false; const [r,g,b,a]=m[1].split(",").map(Number); return r>=245&&g>=245&&b>=245&&(a===undefined||a>0); }
+function flatten(c){ const pts=[]; for(let i=0;i<c.length;i++){ const a=c[i], b=c[(i+1)%c.length];
+    if(a.ho||b.hi){ const c1=a.ho||a, c2=b.hi||b; for(let t=0;t<1;t+=1/8){ const u=1-t; pts.push([u*u*u*a.x+3*u*u*t*c1.x+3*u*t*t*c2.x+t*t*t*b.x, u*u*u*a.y+3*u*u*t*c1.y+3*u*t*t*c2.y+t*t*t*b.y]); } }
+    else pts.push([a.x,a.y]); }
+  return pts; }
+function polyBox(p){ let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity; p.forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y);}); return {x0,x1,y0,y1}; }
+function inPoly(x,y,p){ let ins=false; for(let i=0,j=p.length-1;i<p.length;j=i++){ const [xi,yi]=p[i],[xj,yj]=p[j]; if(((yi>y)!==(yj>y)) && (x<(xj-xi)*(y-yi)/(yj-yi)+xi)) ins=!ins; } return ins; }
+function area(p){ let s=0; for(let i=0,j=p.length-1;i<p.length;j=i++) s+=(p[j][0]*p[i][1]-p[i][0]*p[j][1]); return s/2; }
+// Is contour a fully inside contour b? Tests up to 16 points spread around a.
+function inside(a,b){ if(a.box.x0<b.box.x0||a.box.x1>b.box.x1||a.box.y0<b.box.y0||a.box.y1>b.box.y1) return false;
+  const step=Math.max(1,Math.floor(a.poly.length/16)); for(let i=0;i<a.poly.length;i+=step){ if(!inPoly(a.poly[i][0],a.poly[i][1],b.poly)) return false; } return true; }
+
+function importSVG(text){
+  let doc=null; try{ doc=new DOMParser().parseFromString(text,"image/svg+xml"); }catch(e){}
+  let root=doc&&doc.documentElement;
+  if(!root||root.nodeName.toLowerCase()!=="svg"||doc.getElementsByTagName("parsererror").length){
+    const m=/<svg[\s\S]*<\/svg>/i.exec(text); if(m && m[0].length<text.length) return importSVG(m[0]);
+    toast("That doesn't look like SVG artwork"); return false;
+  }
+  root.querySelectorAll("script,foreignObject,image,iframe").forEach(n=>n.remove());
+  [root,...root.querySelectorAll("*")].forEach(el=>[...el.attributes].forEach(a=>{ if(/^on/i.test(a.name)) el.removeAttribute(a.name); }));
+  const host=document.createElement("div");
+  host.style.cssText="position:absolute;left:-20000px;top:0;width:10px;height:10px;overflow:hidden;opacity:0;pointer-events:none";
+  const art=document.importNode(root,true); host.appendChild(art); document.body.appendChild(host);
+  const raw=[]; let strokes=0, texts=0;
+  try{
+    const rm=art.getScreenCTM(), inv=rm?rm.inverse():null;
+    art.querySelectorAll("path,rect,circle,ellipse,polygon,polyline,line,text").forEach(el=>{
+      if(el.closest("defs,clipPath,mask,symbol,pattern,marker")) return;
+      const tag=el.tagName.toLowerCase();
+      if(tag==="text"){ texts++; return; }
+      const cs=getComputedStyle(el);
+      if(cs.display==="none"||cs.visibility==="hidden"||parseFloat(cs.opacity)===0) return;
+      if(tag==="line"||cs.fill==="none"||parseFloat(cs.fillOpacity)===0){ if(cs.stroke&&cs.stroke!=="none") strokes++; return; }
+      const d=shapeToD(el,tag); if(!d) return;
+      let cs2; try{ cs2=pathToContours(d); }catch(e){ return; }
+      const m=el.getScreenCTM(), M=(inv&&m)?inv.multiply(m):null;
+      const xf=p=>{ if(!p||!M) return; const x=M.a*p.x+M.c*p.y+M.e, y=M.b*p.x+M.d*p.y+M.f; p.x=x; p.y=-y; };
+      const white=isWhite(cs.fill);
+      cs2.forEach(c=>{ c.forEach(n=>{ if(M){ xf(n); xf(n.hi); xf(n.ho); } else { n.y=-n.y; if(n.hi) n.hi.y=-n.hi.y; if(n.ho) n.ho.y=-n.ho.y; } }); raw.push({c,white}); });
+    });
+  } finally { host.remove(); }
+  raw.forEach(o=>{ o.poly=flatten(o.c); o.box=polyBox(o.poly); });
+  let items=raw.filter(o=>o.poly.length>=3 && (o.box.x1-o.box.x0)+(o.box.y1-o.box.y0)>0);
+  // White shapes are knock-outs: keep them only where they sit on top of coloured shapes (they become holes).
+  items=items.filter(o=>!o.white || items.some(b=>b!==o && !b.white && inside(o,b)));
+  if(!items.length){ toast(texts?"That artwork only has live text. Convert the text to outlines first, then copy again.":strokes?"That artwork only has lines. Turn strokes into outlines first, then copy again.":"No filled shapes found in that artwork."); return false; }
+  // Holes by nesting: even depth runs clockwise (ink), odd depth runs counter-clockwise (hole).
+  items.forEach(a=>{ a.depth=items.reduce((n,b)=>n+(b!==a&&inside(a,b)?1:0),0); });
+  items.forEach(o=>{ const cw=area(o.poly)<0; if((o.depth%2===0)!==cw) o.c=reverse(o.c); });
+  // Scale and place: bottom on the baseline (or descender), 50 units of space each side.
+  const B=items.reduce((b,o)=>({x0:Math.min(b.x0,o.box.x0),x1:Math.max(b.x1,o.box.x1),y0:Math.min(b.y0,o.box.y0),y1:Math.max(b.y1,o.box.y1)}),{x0:Infinity,x1:-Infinity,y0:Infinity,y1:-Infinity});
+  const fit=$("artFit").value, h=B.y1-B.y0||1;
+  const target={cap:proj.cap,xh:proj.xh,full:proj.asc-proj.desc}[fit];
+  const s=fit==="orig"?1:target/h, base=fit==="full"?proj.desc:0;
+  const g=G(), wasEmpty=!g.contours.length;
+  const tx=p=>{ if(p){ p.x=Math.round((p.x-B.x0)*s+50); p.y=Math.round((p.y-B.y0)*s+base); } };
+  snapshot();
+  const start=g.contours.length; let pts=0;
+  items.forEach(o=>{ o.c.forEach(n=>{ tx(n); tx(n.hi); tx(n.ho); });
+    for(let i=o.c.length-1;i>0;i--){ const a=o.c[i-1], b=o.c[i]; if(a.x===b.x&&a.y===b.y&&!b.hi&&!a.ho){ o.c.splice(i,1); } }
+    if(o.c.length>=2){ g.contours.push(o.c); pts+=o.c.length; } });
+  const right=Math.round((B.x1-B.x0)*s+50);
+  g.adv = wasEmpty ? right+50 : Math.max(g.adv,right+50);
+  picked=new Set(); for(let i=start;i<g.contours.length;i++) pickContour(i,true); hsel=null; active=null;
+  changed();
+  const skipped=[texts&&`${texts} text item${texts>1?"s":""}`,strokes&&`${strokes} line${strokes>1?"s":""}`].filter(Boolean);
+  toast(`Imported ${g.contours.length-start} shape${g.contours.length-start===1?"":"s"} (${pts} points) into ${label(cur)}, ${g.adv} units wide.`+(skipped.length?` Skipped ${skipped.join(" and ")}; convert them to outlines to include them.`:""));
+  return true;
+}
+
+// ---------- extra characters ----------
+function addChar(){
+  const ch=[...$("newChar").value.trim()][0];
+  if(!ch) return toast("Type a character to add, such as © or @");
+  if(!CHARS.includes(ch)){ proj.extra=proj.extra||[]; proj.extra.push(ch); syncChars(); renderGrid(); persist(); }
+  $("newChar").value=""; select(ch);
+  const b=document.querySelector(`.cell[data-ch="${CSS.escape(ch)}"]`); if(b) b.scrollIntoView({block:"nearest"});
+}
+$("addCharBtn").onclick=addChar;
+$("newChar").addEventListener("keydown",e=>{ if(e.key==="Enter") addChar(); });
+
+// ---------- scale ----------
+function scalePts(nodes,sx,sy,cx,cy){ const f=p=>{ p.x=Math.round(cx+(p.x-cx)*sx); p.y=Math.round(cy+(p.y-cy)*sy); };
+  nodes.forEach(n=>{ f(n); if(n.hi) f(n.hi); if(n.ho) f(n.ho); }); }
+function readScale(){
+  const w=+$("scaleW").value, h=+$("scaleH").value;
+  if(!(w>0&&w<=1000&&h>0&&h<=1000)){ toast("Use percentages between 1 and 1000"); return null; }
+  if(w===100&&h===100){ toast("Set a width or height other than 100%"); return null; }
+  return {sx:w/100, sy:h/100, w, h};
+}
+[50,75,90,110,125,150,200].forEach(v=>{ const b=document.createElement("button"); b.className="chip"; b.innerHTML=`<b>${v}%</b>`;
+  b.title=`Set width${$("scaleLock").checked?" and height":""} to ${v}%`;
+  b.onclick=()=>{ $("scaleW").value=v; if($("scaleLock").checked) $("scaleH").value=v; $("scaleW").focus(); };
+  $("scalePresets").appendChild(b); });
+$("scaleW").addEventListener("input",e=>{ if($("scaleLock").checked) $("scaleH").value=e.target.value; });
+$("scaleH").addEventListener("input",e=>{ if($("scaleLock").checked) $("scaleW").value=e.target.value; });
+$("scaleLock").addEventListener("change",e=>{ if(e.target.checked) $("scaleH").value=$("scaleW").value; });
+const pctLabel=s=>s.w===s.h?`${s.w}%`:`${s.w}% wide, ${s.h}% tall`;
+$("scaleOne").onclick=()=>{
+  const sc=readScale(); if(!sc) return;
+  const g=G(), pl=pickedList();
+  if(!pl.length && !g.contours.length) return toast("This letter is empty");
+  snapshot();
+  if(pl.length){ const nodes=pl.map(({ci,ni})=>g.contours[ci][ni]), b=nodeBox([nodes]);
+    scalePts(nodes,sc.sx,sc.sy,(b.x0+b.x1)/2,(b.y0+b.y1)/2); }
+  else { scalePts(g.contours.flat(),sc.sx,sc.sy,0,0); g.adv=Math.max(0,Math.round(g.adv*sc.sx)); }
+  changed(); toast(`Scaled ${pl.length?"the selection":label(cur)} to ${pctLabel(sc)}`);
+};
+$("scaleAll").onclick=()=>{
+  const sc=readScale(); if(!sc) return;
+  history.push({all:JSON.stringify(proj.glyphs),kern:JSON.stringify(proj.kern),metrics:{asc:proj.asc,cap:proj.cap,xh:proj.xh,desc:proj.desc},ch:cur,what:"Scaling undone"});
+  let n=0;
+  CHARS.forEach(ch=>{ const g=proj.glyphs[ch]; scalePts(g.contours.flat(),sc.sx,sc.sy,0,0); g.adv=Math.max(0,Math.round(g.adv*sc.sx)); if(g.contours.length) n++; });
+  Object.keys(proj.kern).forEach(k=>{ const v=Math.round(proj.kern[k]*sc.sx); if(v) proj.kern[k]=v; else delete proj.kern[k]; });
+  proj.cap=Math.round(proj.cap*sc.sy); proj.xh=Math.round(proj.xh*sc.sy);
+  proj.asc=Math.round(proj.asc*sc.sy); proj.desc=Math.round(proj.desc*sc.sy);
+  picked=new Set(); hsel=null; changed(true);
+  toast(`Scaled ${n} letters to ${pctLabel(sc)}. Undo puts them back.`);
+};
+
+// ---------- rotate ----------
+function rotatePts(nodes,deg,cx,cy){ const a=deg*Math.PI/180, c=Math.cos(a), s=Math.sin(a);
+  const f=p=>{ const x=p.x-cx, y=p.y-cy; p.x=Math.round(cx+x*c-y*s); p.y=Math.round(cy+x*s+y*c); };
+  nodes.forEach(n=>{ f(n); if(n.hi) f(n.hi); if(n.ho) f(n.ho); }); }
+function rotateBy(deg){
+  if(!Number.isFinite(deg)||deg%360===0) return toast("Use an angle other than 0");
+  const g=G(), pl=pickedList();
+  if(!pl.length && !g.contours.length) return toast("This letter is empty");
+  snapshot();
+  const nodes=pl.length ? pl.map(({ci,ni})=>g.contours[ci][ni]) : g.contours.flat();
+  const b=nodeBox([nodes]); rotatePts(nodes,deg,(b.x0+b.x1)/2,(b.y0+b.y1)/2);
+  changed(); toast(`Turned ${pl.length?"the selection":label(cur)} ${Math.abs(deg)}° ${deg>0?"counterclockwise":"clockwise"}`);
+}
+document.querySelectorAll("#rotBtns [data-deg]").forEach(b=>b.onclick=()=>rotateBy(+b.dataset.deg));
+$("rotGo").onclick=()=>rotateBy(+$("rotAngle").value);
+$("rotAngle").addEventListener("keydown",e=>{ if(e.key==="Enter") rotateBy(+e.target.value); });
+
+// ---------- weight and width ----------
+// Nesting depth and direction of each contour, so outlines grow and holes shrink.
+function contourInfo(contours){
+  const info=contours.map(c=>{ const poly=flatten(c); return {poly,box:polyBox(poly),a:area(poly)}; });
+  info.forEach(o=>{ o.depth=info.reduce((n,b)=>n+(b!==o&&b.poly.length>=3&&o.poly.length>=3&&inside(o,b)?1:0),0); });
+  return info;
+}
+// Pushes every point away from the ink by hx across and hy up/down (negative values pull it in).
+// Each point moves along the corner's bisector; its curve handles travel with it.
+function offsetContours(contours,hx,hy){
+  const info=contourInfo(contours);
+  return contours.map((c,ci)=>{
+    const o=info[ci]; if(c.length<3||o.poly.length<3) return clone(c);
+    const s=(o.a>0?1:-1)*(o.depth%2===0?1:-1), L=c.length;
+    const moves=c.map((n,i)=>{
+      const prev=c[(i-1+L)%L], next=c[(i+1)%L];
+      const pin=n.hi||prev.ho||prev, pout=n.ho||next.hi||next;
+      let ix=n.x-pin.x, iy=n.y-pin.y, ox=pout.x-n.x, oy=pout.y-n.y;
+      if(!ix&&!iy){ ix=n.x-prev.x; iy=n.y-prev.y; }
+      if(!ox&&!oy){ ox=next.x-n.x; oy=next.y-n.y; }
+      const li=Math.hypot(ix,iy)||1, lo=Math.hypot(ox,oy)||1;
+      const n1x=iy/li, n1y=-ix/li, n2x=oy/lo, n2y=-ox/lo;
+      let mx=n1x+n2x, my=n1y+n2y; const ml=Math.hypot(mx,my);
+      if(ml<1e-6){ mx=n1x; my=n1y; } else { mx/=ml; my/=ml; }
+      const k=1/Math.max(0.4,mx*n1x+my*n1y);   // longer reach on corners, capped so sharp points don't spike
+      return {dx:s*mx*k*hx, dy:s*my*k*hy};
+    });
+    return c.map((n,i)=>{ const m=moves[i];
+      return {x:n.x+m.dx,y:n.y+m.dy,hi:n.hi?{x:n.hi.x+m.dx,y:n.hi.y+m.dy}:null,ho:n.ho?{x:n.ho.x+m.dx,y:n.ho.y+m.dy}:null}; });
+  });
+}
+const roundC=cs=>cs.map(c=>c.map(n=>({x:Math.round(n.x),y:Math.round(n.y),hi:rp(n.hi),ho:rp(n.ho)})));
+function emboldenGlyph(g,amt){
+  if(!g.contours.length||!amt) return clone(g);
+  const h=amt/2, before=nodeBox(g.contours);
+  const cs=offsetContours(g.contours,h,h), after=nodeBox(cs);
+  // Squeeze back to the original top and bottom so letters stay on the baseline and height lines.
+  if(after.y1-after.y0>1){ const k=(before.y1-before.y0)/(after.y1-after.y0);
+    const f=p=>{ p.y=before.y0+(p.y-after.y0)*k; };
+    cs.forEach(c=>c.forEach(n=>{ f(n); if(n.hi) f(n.hi); if(n.ho) f(n.ho); })); }
+  cs.forEach(c=>c.forEach(n=>moveNode(n,h,0)));
+  return {...g,adv:Math.max(0,Math.round(g.adv+amt)),contours:roundC(cs)};
+}
+function condenseGlyph(g,f,stem){
+  let cs=clone(g.contours);
+  cs.forEach(c=>c.forEach(n=>{ n.x*=f; if(n.hi) n.hi.x*=f; if(n.ho) n.ho.x*=f; }));
+  let adv=g.adv*f;
+  if(stem && cs.length){ const h=stem*(1-f)/2; cs=offsetContours(cs,h,0); cs.forEach(c=>c.forEach(n=>moveNode(n,h,0))); adv+=2*h; }
+  return {...g,adv:Math.max(0,Math.round(adv)),contours:roundC(cs)};
+}
+// Thickness of a vertical stem, read from l, I, i, n or H, so condensing keeps the font's weight.
+function stemWidth(){
+  for(const ch of ["l","I","i","n","H"]){ const g=proj.glyphs[ch]; if(!g||!g.contours.length) continue;
+    const y=/[a-z]/.test(ch)?proj.xh*0.45:proj.cap*0.45, xs=[];
+    g.contours.forEach(c=>{ const p=flatten(c); for(let i=0,j=p.length-1;i<p.length;j=i++){ const [x1,y1]=p[j],[x2,y2]=p[i]; if((y1>y)!==(y2>y)) xs.push(x1+(y-y1)*(x2-x1)/(y2-y1)); } });
+    xs.sort((a,b)=>a-b); let best=Infinity; for(let k=0;k+1<xs.length;k+=2) best=Math.min(best,xs[k+1]-xs[k]);
+    if(best>5&&best<400) return Math.round(best);
+  }
+  return 80;
+}
+let fx=null, fxLive=false, fxStem=80;   // fx: the letter being previewed and its outlines before the sliders moved
+function fxLabels(){ const w=+$("wtAmt").value, c=+$("cnPct").value;
+  $("wtOut").textContent=w?`${w>0?"+":""}${w} · ${w>0?"bolder":"lighter"}`:"· original";
+  $("cnOut").textContent=c===100?"· original":`${c}% · ${c<100?"condensed":"expanded"}`; }
+function fxReset(){ fx=null; $("wtAmt").value=0; $("cnPct").value=100; fxLabels(); }
+function fxApply(g){ const w=+$("wtAmt").value, c=+$("cnPct").value/100; let out=clone(g);
+  if(c!==1) out=condenseGlyph(out,c,$("cnKeep").checked?fxStem:0);
+  if(w) out=emboldenGlyph(out,w);
+  return out; }
+function fxPreview(){
+  const g=G();
+  if(!fx||fx.ch!==cur){
+    if(!g.contours.length){ $("wtAmt").value=0; $("cnPct").value=100; fxLabels(); return toast("This letter is empty. Apply to all letters still works."); }
+    snapshot(); fxStem=stemWidth(); fx={ch:cur,base:clone(g)};
+  }
+  proj.glyphs[cur]=fxApply(fx.base); picked=new Set(); hsel=null; active=null;
+  fxLive=true; changed(); fxLive=false; fxLabels();
+}
+["wtAmt","cnPct"].forEach(id=>$(id).addEventListener("input",fxPreview));
+$("cnKeep").addEventListener("change",()=>{ if(fx) fxPreview(); });
+$("fxBack").onclick=()=>{ if(!fx) return toast("Nothing to put back");
+  proj.glyphs[fx.ch]=clone(fx.base); fxReset(); changed(); toast("Back to the original outlines"); };
+$("fxAll").onclick=()=>{
+  const w=+$("wtAmt").value, c=+$("cnPct").value;
+  if(!w&&c===100) return toast("Move the Weight or Width slider first");
+  if(!fx) fxStem=stemWidth();
+  const before=clone(proj.glyphs); if(fx) before[fx.ch]=fx.base;
+  history.push({all:JSON.stringify(before),kern:JSON.stringify(proj.kern),ch:cur,what:"Weight and width undone"});
+  let n=0;
+  CHARS.forEach(ch=>{ const base=before[ch];
+    if(!base.contours.length){ if(c!==100) proj.glyphs[ch]={...base,adv:Math.round(base.adv*c/100)}; return; }
+    proj.glyphs[ch]=fxApply(base); n++; });
+  if(c!==100) Object.keys(proj.kern).forEach(k=>{ const v=Math.round(proj.kern[k]*c/100); if(v) proj.kern[k]=v; else delete proj.kern[k]; });
+  picked=new Set(); hsel=null; fx=null; changed(true); fxReset();
+  toast(`Changed ${n} letters. Undo puts them back.`);
+};
+fxLabels();
+
+// ---------- tracing image ----------
+function traceUI(){
+  const tr=proj.trace[cur];
+  $("trNone").hidden=!!tr; $("trCtl").hidden=!tr; $("trRemove").hidden=!tr;
+  $("trLoad").textContent=tr?"Replace image":"Load image";
+  if(tr){ setVal("trOp",Math.round(tr.op*100)); setVal("trSize",Math.round(tr.h)); }
+  $("trMove").checked=moveImg;
+}
+function loadTrace(file){
+  if(!file || !/^image\//.test(file.type)) return toast("Choose an image file, such as a PNG or JPEG");
+  const url=URL.createObjectURL(file), img=new Image();
+  img.onload=()=>{
+    const s=Math.min(1,1000/Math.max(img.width,img.height)), c=document.createElement("canvas");
+    c.width=Math.max(1,Math.round(img.width*s)); c.height=Math.max(1,Math.round(img.height*s));
+    const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+    let src; try{ src=c.toDataURL("image/jpeg",0.85); }catch(e){ URL.revokeObjectURL(url); return toast("Couldn't use that image"); }
+    URL.revokeObjectURL(url);
+    const h=proj.asc-proj.desc, w=Math.round(h*img.width/img.height);
+    proj.trace[cur]={src,x:Math.round(G().adv/2-w/2),y:proj.desc,w,h,op:0.4};
+    render(); traceUI(); persist(); toast("Image placed. Trace over it with the Pen (P).");
+  };
+  img.onerror=()=>{ URL.revokeObjectURL(url); toast("Couldn't open that image. Try a PNG or JPEG"); };
+  img.src=url;
+}
+$("trLoad").onclick=()=>$("trFile").click();
+$("trFile").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f) loadTrace(f); });
+$("trRemove").onclick=()=>{ delete proj.trace[cur]; moveImg=false; render(); traceUI(); persist(); };
+$("trOp").addEventListener("input",e=>{ const tr=proj.trace[cur]; if(!tr) return; tr.op=+e.target.value/100; render(); persist(); });
+$("trSize").addEventListener("input",e=>{ const tr=proj.trace[cur]; if(!tr) return;
+  const cx=tr.x+tr.w/2, cy=tr.y+tr.h/2, ratio=tr.w/tr.h, h=+e.target.value, w=h*ratio;
+  tr.h=h; tr.w=Math.round(w); tr.x=Math.round(cx-w/2); tr.y=Math.round(cy-h/2); render(); persist(); });
+$("trMove").addEventListener("change",e=>{ moveImg=e.target.checked; if(moveImg) setTool("select"); render(); setHint(); });
+
+// ---------- tools & keys ----------
+function setTool(t){ tool=t; if(t==="select") active=null; $("toolSelect").setAttribute("aria-pressed",t==="select"); $("toolPen").setAttribute("aria-pressed",t==="pen"); setHint(); render(); }
+function setHint(){
+  let h;
+  if(tool==="pen") h = active!==null ? "Click to add points, drag to pull a curve. Click the first point or press Esc to finish the shape." : "Click to place the first point of a new shape.";
+  else if(moveImg && proj.trace[cur]) h = "Drag anywhere on the board to move the tracing image. Turn off “Drag to move the image” to edit points again.";
+  else h = "Drag a box to select points · Shift-click to add · ⌘C / ⌘V copies and pastes at the pointer · Double-click a point for curved or sharp · Alt-drag breaks a smooth handle.";
+  $("hint").textContent=h;
+}
+$("toolSelect").onclick=()=>setTool("select"); $("toolPen").onclick=()=>setTool("pen"); $("undoBtn").onclick=undo;
+document.addEventListener("keydown",e=>{
+  if(e.target.matches("input:not([type=checkbox]), textarea, select")) return;
+  const k=e.key.toLowerCase(), mod=e.metaKey||e.ctrlKey;
+  if(mod){
+    if(k==="z"){ e.preventDefault(); undo(); }
+    else if(k==="c"){ e.preventDefault(); copySel(false); }
+    else if(k==="x"){ e.preventDefault(); copySel(true); }
+    else if(k==="v"){ pasteSeen=false; clearTimeout(pasteTimer); pasteTimer=setTimeout(()=>{ if(!pasteSeen) paste(true); },120); }
+    else if(k==="a"){ e.preventDefault(); picked=new Set(); G().contours.forEach((_,ci)=>pickContour(ci,true)); hsel=null; render(); inspector(); }
+    return;
+  }
+  if(k==="v") setTool("select"); else if(k==="p") setTool("pen");
+  else if(k==="escape"){ active=null; picked=new Set(); hsel=null; marq=null; render(); inspector(); setHint(); }
+  else if(k==="delete"||k==="backspace"){ e.preventDefault(); deleteSel(); }
+  else if(k.startsWith("arrow")&&(picked.size||hsel)){
+    e.preventDefault(); const d=e.shiftKey?10:1, dx=k==="arrowleft"?-d:k==="arrowright"?d:0, dy=k==="arrowdown"?-d:k==="arrowup"?d:0;
+    snapshot(); const g=G();
+    if(hsel){ const h=g.contours[hsel.ci][hsel.ni][hsel.part]; if(h){h.x+=dx;h.y+=dy;} }
+    else pickedList().forEach(({ci,ni})=>moveNode(g.contours[ci][ni],dx,dy));
+    changed();
+  }
+});
+
+// ---------- kerning ----------
+const SUGGEST=["AV","VA","AT","TA","AY","YA","AW","LT","LV","LY","To","Ta","Te","Ty","Vo","Va","Yo","P.","T.","F."];
+let kl="A", kr="V", kdrag=null;
+function kernVal(l,r){ return proj.kern[kernKey(l,r)]||0; }
+function setKern(l,r,v){ const k=kernKey(l,r); v=Math.round(v); if(!v) delete proj.kern[k]; else proj.kern[k]=v; persist(); scheduleBuild(); }
+function kernPairs(){ return Object.entries(proj.kern).map(([k,v])=>{ const [a,b]=k.split(",").map(n=>String.fromCodePoint(+n)); return {l:a,r:b,v}; }).filter(p=>p.v); }
+function drawKern(){
+  const L=proj.glyphs[kl], R=proj.glyphs[kr], v=kernVal(kl,kr);
+  setVal("kL",kl); setVal("kR",kr); setVal("kV",v); setVal("kS",v);
+  const la=L?L.adv:500, ra=R?R.adv:500;
+  const x0=-150, W=la+ra+300, top=proj.asc+80, H=proj.asc-proj.desc+160;
+  kSvg.setAttribute("viewBox",`${x0} ${-top} ${W} ${H}`);
+  kSvg.innerHTML="";
+  const g=el("g",{transform:"scale(1,-1)"},kSvg), nse={"vector-effect":"non-scaling-stroke"};
+  el("line",{x1:x0,y1:0,x2:x0+W,y2:0,class:"kline",...nse},g);
+  if(L&&L.contours.length) el("path",{d:pathD(L.contours),class:"kl"},g);
+  if(R&&R.contours.length) el("path",{transform:`translate(${la+v},0)`,d:pathD(R.contours),class:"kr"},g);
+  el("line",{x1:la,y1:proj.desc,x2:la,y2:proj.asc,class:"kline",...nse,"stroke-dasharray":"4 4"},g);
+  if(v) el("line",{x1:la,y1:proj.desc+30,x2:la+v,y2:proj.desc+30,class:"kmark",...nse},g);
+  const t=el("text",{x:la,y:-(proj.desc-10),"text-anchor":"middle",class:"ktext","font-size":Math.round(H/16)},kSvg);
+  t.textContent=v?(v>0?"+":"")+v:"0";
+  const missing=[kl,kr].filter(c=>!proj.glyphs[c]||!proj.glyphs[c].contours.length);
+  $("kNote").textContent = missing.length ? `Draw ${missing.map(label).join(" and ")} to see this pair. You can still set its kerning now.` : "Drag left or right on the pair to tighten or loosen it. Negative numbers pull the letters closer.";
+  const lower=/[a-z]/.test(kl+kr) && !/[A-Z]/.test(kr);
+  $("kCtx").textContent = lower ? `nn${kl}${kr}nn oo${kl}${kr}oo` : `HH${kl}${kr}HH OO${kl}${kr}OO`;
+  kernLists();
+}
+function chip(l,r,v,container){
+  const b=document.createElement("button"); b.className="chip"+(v?" set":"")+(l===kl&&r===kr?" on":"");
+  b.innerHTML=`<b>${esc(l+r)}</b>`+(v?`<span>${v>0?"+":""}${v}</span>`:"");
+  b.onclick=()=>{ kl=l; kr=r; drawKern(); };
+  container.appendChild(b);
+}
+function kernLists(){
+  const s=$("kSuggest"); s.innerHTML=""; SUGGEST.forEach(p=>{ const [l,r]=[...p]; chip(l,r,kernVal(l,r),s); });
+  const list=$("kList"); list.innerHTML="";
+  const ps=kernPairs().sort((a,b)=>(a.l+a.r).localeCompare(b.l+b.r));
+  if(!ps.length) list.innerHTML='<p class="note">No pairs yet. Pick a pair above or type two letters.</p>';
+  ps.slice(0,300).forEach(p=>chip(p.l,p.r,p.v,list));
+  if(ps.length>300){ const n=document.createElement("p"); n.className="note"; n.textContent=`and ${ps.length-300} more`; list.appendChild(n); }
+  $("kernCount").textContent=ps.length?`· ${ps.length}`:"";
+}
+function charInput(id,setter){ $(id).addEventListener("input",e=>{ const ch=[...e.target.value][0]; if(ch){ setter(ch); drawKern(); } }); }
+charInput("kL",c=>kl=c); charInput("kR",c=>kr=c);
+$("kV").addEventListener("change",e=>{ const v=+e.target.value; if(Number.isFinite(v)){ setKern(kl,kr,v); drawKern(); } });
+$("kS").addEventListener("input",e=>{ setKern(kl,kr,+e.target.value); drawKern(); });
+$("kSwap").onclick=()=>{ [kl,kr]=[kr,kl]; drawKern(); };
+$("kDel").onclick=()=>{ setKern(kl,kr,0); drawKern(); };
+kSvg.addEventListener("pointerdown",e=>{ kdrag={x:toFont(e,kSvg).x,v:kernVal(kl,kr)}; kSvg.setPointerCapture(e.pointerId); });
+kSvg.addEventListener("pointermove",e=>{ if(!kdrag) return; const v=kdrag.v+toFont(e,kSvg).x-kdrag.x; setKern(kl,kr,e.shiftKey?Math.round(v/10)*10:v); drawKern(); });
+kSvg.addEventListener("pointerup",()=>kdrag=null); kSvg.addEventListener("pointercancel",()=>kdrag=null);
+function showTab(which){
+  const kern=which==="kern";
+  $("tabProof").setAttribute("aria-selected",!kern); $("tabKern").setAttribute("aria-selected",kern);
+  $("panelProof").hidden=kern; $("panelKern").hidden=!kern;
+  if(kern) drawKern();
+  try{ localStorage.setItem("glyphwright.tab",which); }catch(e){}
+}
+$("tabProof").onclick=()=>showTab("proof"); $("tabKern").onclick=()=>showTab("kern");
+
+// ---------- build font ----------
+/*FONT-START*/
+function buildFont(){
+  const glyphs=[new opentype.Glyph({name:".notdef",advanceWidth:500,path:new opentype.Path()})], gid={};
+  for(const ch of CHARS){
+    const g=proj.glyphs[ch]; if(!g.contours.length && ch!==" ") continue;
+    const p=new opentype.Path();
+    for(const c of g.contours){ if(c.length<2) continue;
+      p.moveTo(c[0].x,c[0].y);
+      for(let i=0;i<c.length;i++){ const a=c[i], b=c[(i+1)%c.length];
+        if(a.ho||b.hi){ const c1=a.ho||a, c2=b.hi||b; p.curveTo(c1.x,c1.y,c2.x,c2.y,b.x,b.y); } else p.lineTo(b.x,b.y); }
+      p.close();
+    }
+    gid[ch]=glyphs.length;
+    glyphs.push(new opentype.Glyph({name:glyphName(ch),unicode:ch.codePointAt(0),advanceWidth:Math.max(0,g.adv),path:p}));
+  }
+  const font=new opentype.Font({familyName:(proj.family||"Untitled").trim()||"Untitled",styleName:proj.italic?"Italic":"Regular",unitsPerEm:1000,
+    ascender:Math.max(proj.asc,proj.cap,1),descender:Math.min(proj.desc,-1),glyphs});
+  font.tables=font.tables||{};
+  font.tables.os2=Object.assign({},font.tables.os2,{fsSelection:proj.italic?0x0001:0x0040});
+  return {font,gid};
+}
+function fontBytes(){
+  const {font,gid}=buildFont();
+  const buf=font.toArrayBuffer();
+  const pairs=Object.entries(proj.kern||{}).map(([k,v])=>{ const [a,b]=k.split(",").map(n=>String.fromCodePoint(+n)); return [gid[a],gid[b],Math.round(v)]; })
+    .filter(p=>p[0]!==undefined&&p[1]!==undefined&&p[2]);
+  return finishFont(buf,pairs,{italic:!!proj.italic,italicAngle:proj.italic?-(proj.slant||0):0});
+}
+// Finishes a font file: adds a classic 'kern' table (format 0) when there are pairs, sets the italic flags
+// in 'head' and 'post', and rebuilds the table directory and checksums.
+function finishFont(buf,pairs,style){
+  pairs.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  const n=Math.min(pairs.length,10000), klen=4+6+8+6*n, kern=new DataView(new ArrayBuffer(klen));
+  kern.setUint16(0,0); kern.setUint16(2,1);
+  kern.setUint16(4,0); kern.setUint16(6,6+8+6*n); kern.setUint16(8,0x0001);
+  let es=Math.floor(Math.log2(n)), sr=6*(1<<es);
+  kern.setUint16(10,n); kern.setUint16(12,sr); kern.setUint16(14,es); kern.setUint16(16,n*6-sr);
+  for(let i=0;i<n;i++){ const o=18+6*i; kern.setUint16(o,pairs[i][0]); kern.setUint16(o+2,pairs[i][1]); kern.setInt16(o+4,Math.max(-32768,Math.min(32767,pairs[i][2]))); }
+  const src=new DataView(buf), num=src.getUint16(4), tables=[];
+  for(let i=0;i<num;i++){ const r=12+16*i; const tag=String.fromCharCode(src.getUint8(r),src.getUint8(r+1),src.getUint8(r+2),src.getUint8(r+3));
+    if(tag!=="kern") tables.push({tag,data:new Uint8Array(buf,src.getUint32(r+8),src.getUint32(r+12))}); }
+  if(n>0) tables.push({tag:"kern",data:new Uint8Array(kern.buffer)});
+  tables.sort((a,b)=>a.tag<b.tag?-1:a.tag>b.tag?1:0);
+  const pad=l=>(l+3)&~3, T=tables.length;
+  let off=12+16*T; const total=off+tables.reduce((s,t)=>s+pad(t.data.length),0);
+  const out=new Uint8Array(total), dv=new DataView(out.buffer);
+  const sum=(o,l)=>{ let s=0; for(let i=0;i<pad(l);i+=4) s=(s+dv.getUint32(o+i))>>>0; return s; };
+  dv.setUint32(0,src.getUint32(0)); dv.setUint16(4,T); es=Math.floor(Math.log2(T)); sr=16*(1<<es);
+  dv.setUint16(6,sr); dv.setUint16(8,es); dv.setUint16(10,T*16-sr);
+  let headOff=-1;
+  tables.forEach((t,i)=>{ const r=12+16*i;
+    for(let j=0;j<4;j++) dv.setUint8(r+j,t.tag.charCodeAt(j));
+    out.set(t.data,off);
+    if(t.tag==="head"){ headOff=off; dv.setUint32(off+8,0); dv.setUint16(off+44,style.italic?0x0002:0); }
+    if(t.tag==="post") dv.setInt32(off+4,Math.round((style.italicAngle||0)*65536));
+    dv.setUint32(r+4,sum(off,t.data.length)); dv.setUint32(r+8,off); dv.setUint32(r+12,t.data.length);
+    off+=pad(t.data.length); });
+  if(headOff>=0) dv.setUint32(headOff+8,(0xB1B0AFBA-sum(0,total))>>>0);
+  return out.buffer;
+}
+/*FONT-END*/
+let buildT, faceN=0, lastFace=null;
+function scheduleBuild(){ clearTimeout(buildT); buildT=setTimeout(rebuild,250); }
+async function rebuild(){
+  const st=$("buildStatus");
+  if(typeof opentype==="undefined"){ st.textContent="Font engine didn't load. Check your connection and reload."; st.className="status err"; return; }
+  try{
+    const buf=fontBytes();
+    const name="GWPreview"+(++faceN), face=new FontFace(name,buf);
+    await face.load(); document.fonts.add(face);
+    document.documentElement.style.setProperty("--preview",`"${name}", "IBM Plex Mono", monospace`);
+    if(lastFace) document.fonts.delete(lastFace); lastFace=face;
+    st.textContent=`Built · ${Math.round(buf.byteLength/102.4)/10} KB`; st.className="status";
+  }catch(err){ st.textContent="Couldn't build the font: "+(err.message||err); st.className="status err"; }
+}
+function proof(){
+  $("proofText").textContent=$("proofInput").value; $("proofText").style.fontSize=$("proofSize").value+"px"; $("sizeVal").textContent=$("proofSize").value+"px";
+  $("alphabet").textContent=CHARS.filter(c=>c!==" ").slice(0,160).join("");
+}
+$("proofInput").addEventListener("input",proof); $("proofSize").addEventListener("input",proof);
+$("family").addEventListener("input",e=>{ proj.family=e.target.value; persist(); scheduleBuild(); });
+
+function changed(all){ if(fx&&!fxLive) fxReset(); render(); inspector(); setHint(); if(all) renderGrid(); else updateThumb(cur); persist(); scheduleBuild(); if(!$("panelKern").hidden) drawKern(); }
+
+// ---------- files ----------
+const fileSafe=()=>((proj.family||"Untitled").replace(/[^A-Za-z0-9]+/g,"")||"Untitled");
+// Ask for the downloads capability when it's needed, not once at load, so a slow viewer never leaves the buttons dead.
+let dlPromise=null;
+function getDownloads(){
+  if(!(window.claude && typeof window.claude.use==="function")) return Promise.resolve(null);
+  if(!dlPromise) dlPromise=window.claude.use("downloads").catch(()=>null).then(d=>{ if(!d) dlPromise=null; return d; });
+  return dlPromise;
+}
+getDownloads();
+let statusT;
+function fileStatus(msg,isErr){ const s=$("fileStatus"); s.textContent=msg; s.className="filestatus"+(isErr?" err":""); s.hidden=false; clearTimeout(statusT); if(!isErr) statusT=setTimeout(()=>s.hidden=true,4000); }
+const UNAVAILABLE="This view can't save files. Open Glyphwright from your artifacts on claude.ai in a web browser (Chrome, Safari or Firefox) and try again.";
+// Outside Claude (for example embedded on a website) there is no window.claude, so use an ordinary browser download.
+const inClaude=!!(window.claude && typeof window.claude.use==="function");
+function browserDownload(filename,data){
+  const type=/\.json$/.test(filename)?"application/json":"font/otf";
+  const url=URL.createObjectURL(new Blob([data],{type}));
+  const a=document.createElement("a"); a.href=url; a.download=filename; a.rel="noopener"; a.style.display="none";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),10000);
+}
+async function save(btn,filename,makeData,okMsg,fallback){
+  if(window.glyphwrightDesktop){
+    btn.disabled=true;
+    try {
+      const kind=filename.endsWith('.json')?'project':'font';
+      const location=await window.glyphwrightDesktop.saveFile(filename,makeData(),kind);
+      if(location) fileStatus(okMsg+": "+location);
+      else fileStatus("Save cancelled.");
+    } catch(err) { fileStatus("Couldn't save the file: "+(err.message||err),true); if(fallback) fallback(); }
+    finally { btn.disabled=false; }
+    return;
+  }
+  if(!inClaude){
+    try{ if(/\.ttf$/.test(filename)) filename=filename.replace(/\.ttf$/,".otf"); browserDownload(filename,makeData()); fileStatus(okMsg+": "+filename+" is in your Downloads folder"); }
+    catch(err){ fileStatus("Couldn't save the file: "+(err&&err.message||err),true); }
+    return;
+  }
+  btn.disabled=true; const label=btn.textContent; btn.textContent="Preparing…";
+  try{
+    const dl=await getDownloads();
+    if(!dl){ fileStatus(UNAVAILABLE,true); if(fallback) fallback(); return; }
+    const data=makeData();
+    btn.textContent="Waiting for you to confirm…";
+    await dl.save({filename,data});
+    fileStatus(okMsg+": "+filename);
+  }catch(err){
+    const code=err&&err.code;
+    if(code==="declined") fileStatus("Save cancelled.");
+    else if(code==="rate_limited") fileStatus("A save prompt is already open. Finish that one first.",true);
+    else if(code==="too_large") fileStatus("That file is too large to save here.",true);
+    else if(["unavailable","not_granted","capability_disabled","capability_removed","extension_not_enabled"].includes(code)){ fileStatus(UNAVAILABLE,true); if(fallback) fallback(); }
+    else fileStatus("Couldn't save the file"+(code?` (${code})`:"")+": "+(err&&err.message||err),true);
+  }finally{ btn.disabled=false; btn.textContent=label; }
+}
+function showFallback(){ $("fallbackText").value=JSON.stringify(proj); $("fallback").hidden=false; }
+$("fallbackClose").onclick=()=>{ $("fallback").hidden=true; };
+$("fallbackCopy").onclick=()=>{ const t=$("fallbackText");
+  const sel=()=>{ t.focus(); t.select(); fileStatus("Text selected. Press ⌘C to copy it."); };
+  try{ navigator.clipboard.writeText(t.value).then(()=>fileStatus("Project text copied."),sel); }catch(e){ sel(); } };
+// Project and font files are generated in the browser and saved locally.
+$("exportFont").onclick=e=>save(e.currentTarget,fileSafe()+(proj.italic?"-Italic.otf":"-Regular.otf"),fontBytes,"Font saved");
+$("saveProj").onclick=e=>save(e.currentTarget,fileSafe()+".glyphwright.json",()=>JSON.stringify(proj),"Project saved",showFallback);
+$("openBtn").onclick=()=>$("openFile").click();
+function adopt(p,msg){
+  $("italicStyle").checked=!!p.italic;
+  proj=p; syncChars(); history=[]; picked=new Set(); hsel=null; active=null; moveImg=false; $("family").value=proj.family||"";
+  renderGrid(); select(CHARS.find(c=>proj.glyphs[c].contours.length)||"A"); guideUI(); changed(true); toast(msg);
+}
+$("openFile").addEventListener("change",e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return; openFontFile(f);
+});
+function openFontFile(f){
+  const ext=(f.name.split(".").pop()||"").toLowerCase();
+  if(ext==="json"){
+    f.text().then(t=>{ try{ const p=JSON.parse(t); if(!p.glyphs) throw 0; adopt(p,"Project opened"); }catch(_){ toast("That file isn't a Glyphwright project"); } });
+    return;
+  }
+  if(ext==="woff2") return toast("WOFF2 isn't supported. Open the .ttf or .otf version instead");
+  if(ext==="dfont") return toast("Old .dfont suitcases can't be opened here. Send them to Claude to convert to .otf.");
+  f.arrayBuffer().then(buf=>openFontBuffer(buf,null)).catch(()=>toast("Couldn't read that file"));
+}
+// Opens a font file's bytes. Font collections (.ttc) hold several faces: pick by PostScript name, or ask.
+function openFontBuffer(buf,psName,label){
+  let faces=null;
+  try{ faces=splitCollection(buf); }catch(err){ return toast("Couldn't read that font collection"); }
+  if(faces){
+    const parsed=faces.map(b=>{ try{ const f=opentype.parse(b); return {buf:b,ps:(f.names.postScriptName||{}).en||"",fam:(f.names.fontFamily||{}).en||"Font",sty:(f.names.fontSubfamily||{}).en||""}; }catch(e){ return null; } }).filter(Boolean);
+    if(!parsed.length) return toast("Couldn't read any fonts in that collection");
+    const hit=psName && parsed.find(x=>x.ps===psName);
+    if(hit) return importAndAdopt(hit.buf,`${hit.fam} ${hit.sty}`.trim());
+    if(parsed.length===1) return importAndAdopt(parsed[0].buf,`${parsed[0].fam} ${parsed[0].sty}`.trim());
+    return showPicker("This file holds "+parsed.length+" styles. Choose one",
+      parsed.map(x=>({name:x.fam,style:x.sty,ps:x.ps,go:()=>importAndAdopt(x.buf,`${x.fam} ${x.sty}`.trim())})),
+      "Pick the style you want to edit.");
+  }
+  importAndAdopt(buf,label||null);
+}
+function importAndAdopt(buf,label){
+  try{ const p=importFont(buf); const nk=Object.keys(p.kern).length; hidePicker();
+    adopt(p,(label?`Opened ${label}`:"Font opened")+(nk?` with ${nk} kerning pairs`:"")); }
+  catch(err){ toast("Couldn't read that font: "+(err&&err.message||"unknown format")); }
+}
+// A .ttc collection shares one file between several fonts. Rebuild each face as a standalone font file.
+function splitCollection(buf){
+  const dv=new DataView(buf); if(buf.byteLength<12 || dv.getUint32(0)!==0x74746366) return null;
+  const n=dv.getUint32(8), out=[];
+  for(let k=0;k<n;k++){
+    const off=dv.getUint32(12+4*k), num=dv.getUint16(off+4), tabs=[];
+    for(let i=0;i<num;i++){ const r=off+12+16*i; tabs.push({rec:new Uint8Array(buf,r,8),o:dv.getUint32(r+8),l:dv.getUint32(r+12)}); }
+    const pad=l=>(l+3)&~3; let pos=12+16*num; const total=pos+tabs.reduce((t,x)=>t+pad(x.l),0);
+    const u=new Uint8Array(total), w=new DataView(u.buffer);
+    u.set(new Uint8Array(buf,off,12),0);
+    tabs.forEach((t,i)=>{ const r=12+16*i; u.set(t.rec,r); w.setUint32(r+8,pos); w.setUint32(r+12,t.l); u.set(new Uint8Array(buf,t.o,t.l),pos); pos+=pad(t.l); });
+    out.push(u.buffer);
+  }
+  return out;
+}
+// ---------- installed fonts (Chrome and Edge, with permission) ----------
+let pickerItems=[];
+function showPicker(title,items,note){
+  pickerItems=items; $("pickerTitle").textContent=title; $("pickerNote").textContent=note||"";
+  $("pickerSearch").value=""; $("picker").hidden=false; renderPicker(); $("pickerSearch").focus();
+}
+function hidePicker(){ $("picker").hidden=true; pickerItems=[]; $("pickerList").innerHTML=""; }
+function renderPicker(){
+  const q=$("pickerSearch").value.trim().toLowerCase(), list=$("pickerList"); list.innerHTML="";
+  const hits=pickerItems.filter(x=>!q||(x.name+" "+x.style).toLowerCase().includes(q));
+  hits.slice(0,300).forEach(x=>{
+    const b=document.createElement("button"); b.className="pick"; b.setAttribute("role","listitem");
+    const n=document.createElement("span"); n.className="pn"; n.textContent=x.name; if(x.cssFamily) n.style.fontFamily=`"${x.cssFamily.replace(/"/g,"")}", var(--body)`;
+    const st=document.createElement("span"); st.className="ps"; st.textContent=x.style||x.ps||"";
+    b.append(n,st); b.onclick=()=>{ b.disabled=true; st.textContent="Opening…"; Promise.resolve(x.go()).finally(()=>{ b.disabled=false; }); };
+    list.appendChild(b);
+  });
+  if(!hits.length) list.innerHTML='<p class="note">No fonts match that search.</p>';
+  else if(hits.length>300){ const m=document.createElement("p"); m.className="note"; m.textContent=`Showing 300 of ${hits.length}. Type to narrow the list.`; list.appendChild(m); }
+}
+$("pickerSearch").addEventListener("input",renderPicker);
+$("pickerClose").onclick=hidePicker;
+const FONTBOOK_TIP="In Font Book, right-click the font and choose Show in Finder, then drag the file onto the drawing board (or use Open font or project).";
+$("installedBtn").onclick=async()=>{
+  // In the Mac app, the Mac itself lists and reads the installed fonts.
+  const macFonts=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.glyphwrightFonts;
+  if(macFonts){
+    let list; try{ list=await macFonts.postMessage({action:"list"}); }catch(err){ return fileStatus("Couldn't list the installed fonts: "+(err&&err.message||err),true); }
+    if(!list||!list.length) return fileStatus("No installed fonts were found.",true);
+    list.sort((a,b)=>(a.family+a.style).localeCompare(b.family+b.style));
+    return showPicker(`Installed fonts (${list.length})`,list.map(fd=>({name:fd.family,style:fd.style,ps:fd.postscriptName,cssFamily:fd.family,
+      go:async()=>{ try{ const b64=await macFonts.postMessage({action:"read",postscriptName:fd.postscriptName});
+        const bin=atob(b64), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+        openFontBuffer(u.buffer,fd.postscriptName,fd.fullName||fd.family); }catch(e){ toast("Couldn't read that font: "+(e&&e.message||e)); } }})),
+      "Opening a font replaces what's in the editor. Many installed fonts are licensed, so check before sharing changed versions.");
+  }
+  if(!("queryLocalFonts" in window)) return fileStatus("This browser can't list installed fonts. "+FONTBOOK_TIP+" Chrome and Edge can list them directly.",true);
+  let fonts;
+  try{ fonts=await window.queryLocalFonts(); }
+  catch(err){ return fileStatus((err&&err.name==="NotAllowedError"?"Access to installed fonts was turned off. ":"Installed fonts aren't available here. ")+FONTBOOK_TIP,true); }
+  if(!fonts.length) return fileStatus("No installed fonts were shared. "+FONTBOOK_TIP,true);
+  fonts.sort((a,b)=>(a.family+a.style).localeCompare(b.family+b.style));
+  showPicker(`Installed fonts (${fonts.length})`,fonts.map(fd=>({name:fd.family,style:fd.style,ps:fd.postscriptName,cssFamily:fd.family,
+    go:async()=>{ try{ const blob=await fd.blob(); openFontBuffer(await blob.arrayBuffer(),fd.postscriptName,fd.fullName||fd.family); }catch(e){ toast("Couldn't read that font"); } }})),
+    "Opening a font replaces what's in the editor. Many installed fonts are licensed, so check before sharing changed versions.");
+};
+/*IMPORT-START*/
+// Convert a font file into a project: scale to 1000 UPM, turn quadratic curves into cubic, keep outlines editable, bring kerning across.
+function importFont(buf){
+  if(typeof opentype==="undefined") throw new Error("font engine didn't load");
+  const font=opentype.parse(buf), s=1000/font.unitsPerEm, R=v=>Math.round(v*s);
+  const os2=font.tables.os2||{};
+  const fam=(font.getEnglishName&&font.getEnglishName("fontFamily"))||(font.names.fontFamily&&font.names.fontFamily.en)||"Imported";
+  const p={family:fam,asc:R(font.ascender),desc:R(font.descender),cap:os2.sCapHeight?R(os2.sCapHeight):R(font.ascender*0.9),xh:os2.sxHeight?R(os2.sxHeight):R(font.ascender*0.66),glyphs:{},extra:[],kern:{},trace:{}};
+  const seen=new Set(), glyphOf={};
+  for(let i=0;i<font.glyphs.length;i++){
+    const gl=font.glyphs.get(i), cps=(gl.unicodes&&gl.unicodes.length)?gl.unicodes:(gl.unicode!==undefined?[gl.unicode]:[]);
+    for(const cp of cps){
+      if(cp<32||seen.has(cp)) continue; seen.add(cp);
+      const ch=String.fromCodePoint(cp);
+      if(!BASE.includes(ch)){ if(p.extra.length>=600) continue; p.extra.push(ch); }
+      p.glyphs[ch]={adv:R(gl.advanceWidth||0),contours:toContours(gl.path.commands,R)};
+      glyphOf[ch]=gl;
+    }
+  }
+  p.extra.sort((a,b)=>a.codePointAt(0)-b.codePointAt(0));
+  const basics=BASE.filter(c=>c!==" "&&glyphOf[c]&&p.glyphs[c].contours.length);
+  // GPOS kerning (default script, else Latin), falling back to the older 'kern' table
+  let tabs=[]; try{ const pos=font.position; tabs=(pos.defaultKerningTables&&pos.defaultKerningTables.length)?pos.defaultKerningTables:(pos.getKerningTables("latn")||[]); }catch(e){}
+  const kv=(a,b)=>{ let v=0; if(tabs.length){ try{ v=font.position.getKerningValue(tabs,a.index,b.index)||0; }catch(e){} }
+    if(!v && font.kerningPairs) v=font.kerningPairs[a.index+","+b.index]||0; return v; };
+  for(const l of basics) for(const r of basics){ const v=kv(glyphOf[l],glyphOf[r]); if(v) p.kern[kernKey(l,r)]=R(v); }
+  return p;
+}
+function toContours(cmds,R){
+  const out=[]; let c=null;
+  const finish=()=>{ if(!c) return;
+    for(let i=c.length-1;i>0;i--){ const a=c[i-1], b=c[i]; if(a.x===b.x&&a.y===b.y){ a.ho=b.ho||a.ho; if(!a.hi) a.hi=b.hi; c.splice(i,1); } }
+    if(c.length>1){ const a=c[0], z=c[c.length-1]; if(a.x===z.x&&a.y===z.y){ a.hi=z.hi; c.pop(); } }
+    if(c.length>=2) out.push(c); c=null; };
+  for(const k of cmds){
+    if(k.type==="M"){ finish(); c=[{x:R(k.x),y:R(k.y),hi:null,ho:null}]; }
+    else if(!c) continue;
+    else if(k.type==="L"){ c.push({x:R(k.x),y:R(k.y),hi:null,ho:null}); }
+    else if(k.type==="C"){ c[c.length-1].ho={x:R(k.x1),y:R(k.y1)}; c.push({x:R(k.x),y:R(k.y),hi:{x:R(k.x2),y:R(k.y2)},ho:null}); }
+    else if(k.type==="Q"){ const p0=c[c.length-1], qx=R(k.x1), qy=R(k.y1), x=R(k.x), y=R(k.y);
+      p0.ho={x:Math.round(p0.x+2/3*(qx-p0.x)),y:Math.round(p0.y+2/3*(qy-p0.y))};
+      c.push({x,y,hi:{x:Math.round(x+2/3*(qx-x)),y:Math.round(y+2/3*(qy-y))},ho:null}); }
+    else if(k.type==="Z"){ finish(); }
+  }
+  finish(); return out;
+}
+/*IMPORT-END*/
+
+let toastT; function toast(m){ const t=$("toast"); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,2600); }
+
+// ---------- boot ----------
+$("family").value=proj.family; $("italicStyle").checked=!!proj.italic;
+renderGrid(); select("A"); guideUI(); proof(); setHint(); rebuild();
+let savedTab=null; try{ savedTab=localStorage.getItem("glyphwright.tab"); }catch(e){}
+showTab(savedTab==="kern"?"kern":"proof");
+new ResizeObserver(()=>render()).observe(svg);
+})();
+</script>
+
+</body></html>
